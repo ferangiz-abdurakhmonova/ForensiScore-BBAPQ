@@ -1,0 +1,7 @@
+{
+  "name": "AuditScore: Financial Forensics & Insolvency Engine",
+  "description": "Forensic financial audit and scoring platform featuring Benford's Law, Beneish M-Score, Altman Z-Score, Piotroski F-Score, and Quality of Earnings analysis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

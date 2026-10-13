@@ -191,7 +191,10 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
         const isRound = Math.abs(tx.Amount) >= 500 && Math.abs(tx.Amount) % 500 === 0;
         
         let reason = '';
-        if (isAnomalousDigit && leadingDigit !== null) {
+        if (isAnomalousDigit && isRound && leadingDigit !== null) {
+          const spread = stat ? (stat.diffFreq > 0 ? `+${formatPercent(stat.diffFreq, 1)}` : formatPercent(stat.diffFreq, 1)) : '';
+          reason = `Non-conforming Leading Digit ${leadingDigit} (${spread} abnormal deviation) & Round voucher ($${Math.abs(tx.Amount).toLocaleString()})`;
+        } else if (isAnomalousDigit && leadingDigit !== null) {
           const spread = stat ? (stat.diffFreq > 0 ? `+${formatPercent(stat.diffFreq, 1)}` : formatPercent(stat.diffFreq, 1)) : '';
           reason = `Non-conforming Leading Digit ${leadingDigit} (${spread} abnormal deviation)`;
         } else if (isRound) {
@@ -698,14 +701,34 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
                       {formatCurrency(tx.Amount)}
                     </td>
                     <td className="py-2 px-3 text-center tabular-nums">
-                      <span className="inline-block font-bold px-1.5 py-0.5 rounded text-[11px] bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                      <span
+                        className={`inline-block font-bold px-1.5 py-0.5 rounded text-[11px] ${
+                          tx.isAnomalousDigit
+                            ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
+                        }`}
+                      >
                         {tx.firstDigit ?? '-'}
                       </span>
                     </td>
                     <td className="py-2 px-3 text-center">
-                      <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold text-[11px] border border-rose-300 dark:border-rose-700">
-                        Non-conforming Leading Digit {tx.firstDigit}
-                      </span>
+                      <div className="flex flex-wrap items-center justify-center gap-1">
+                        {tx.isAnomalousDigit && (
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold text-[11px] border border-rose-300 dark:border-rose-700">
+                            Non-conforming Leading Digit {tx.firstDigit}
+                          </span>
+                        )}
+                        {tx.isRound && (
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold text-[11px] border border-rose-300 dark:border-rose-700">
+                            Round Voucher Anomaly
+                          </span>
+                        )}
+                        {!tx.isAnomalousDigit && !tx.isRound && (
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold text-[11px] border border-rose-300 dark:border-rose-700">
+                            Non-conforming Leading Digit {tx.firstDigit}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2 px-3 font-sans text-[11px] text-rose-700 dark:text-rose-400">
                       {tx.reason}

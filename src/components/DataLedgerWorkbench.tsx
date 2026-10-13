@@ -156,7 +156,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
     }
 
     if (isExcessiveRoundAmount(tx.Amount)) {
-      flags.push('Excessive Round Amount');
+      flags.push('Round Voucher Anomaly');
     }
 
     return flags;
@@ -854,12 +854,12 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
                                   <span
                                     key={i}
                                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                                      flag.includes('Non-conforming')
+                                      flag.includes('Non-conforming') || flag.includes('Round Voucher')
                                         ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
                                         : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-800'
                                     }`}
                                   >
-                                    <span className={`w-1.5 h-1.5 rounded-full ${flag.includes('Non-conforming') ? 'bg-rose-500' : 'bg-amber-500'}`} />
+                                    <span className={`w-1.5 h-1.5 rounded-full ${flag.includes('Non-conforming') || flag.includes('Round Voucher') ? 'bg-rose-500' : 'bg-amber-500'}`} />
                                     <span>{flag}</span>
                                   </span>
                                 ))}

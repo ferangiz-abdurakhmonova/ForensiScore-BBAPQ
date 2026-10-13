@@ -21,7 +21,8 @@ export const BeneishPanel: React.FC<BeneishPanelProps> = ({
   baselinePeriod = '2023',
   onJumpToLedger,
 }) => {
-  const isManipulator = result.mScore > -2.22;
+  const isGray = result.badgeColor === 'gray';
+  const isManipulator = !isGray && result.mScore > -2.22;
   const varsList = Object.values(result.variables);
 
   const cur = currentFin || ({
@@ -175,16 +176,20 @@ export const BeneishPanel: React.FC<BeneishPanelProps> = ({
             </span>
             <div className="flex items-baseline gap-3 mt-1">
               <span className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white tracking-tight tabular-nums">
-                {formatNumber(result.mScore, 3)}
+                {isGray ? 'N/A' : formatNumber(result.mScore, 3)}
               </span>
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-bold border ${
-                  isManipulator
+                  isGray
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                    : isManipulator
                     ? 'bg-rose-50 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700/80'
                     : 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/80'
                 }`}
               >
-                {isManipulator ? (
+                {isGray ? (
+                  <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                ) : isManipulator ? (
                   <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                 ) : (
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -198,7 +203,7 @@ export const BeneishPanel: React.FC<BeneishPanelProps> = ({
             <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
               <span>Threshold Line: -2.22</span>
               <span className="font-mono font-medium">
-                {isManipulator ? 'Diverged above limit' : 'Safe zone below limit'}
+                {isGray ? 'Awaiting financial statements' : isManipulator ? 'Diverged above limit' : 'Safe zone below limit'}
               </span>
             </div>
             {/* Visual Gauge */}

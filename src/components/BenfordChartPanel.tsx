@@ -12,6 +12,7 @@ import {
   Search,
   ExternalLink,
   Filter,
+  Clock,
 } from 'lucide-react';
 import {
   MathSourceTraceSection,
@@ -242,10 +243,10 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
             Mean Absolute Deviation (MAD)
           </span>
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">
-            {formatNumber(result.mad, 4)}
+            {result.badgeColor === 'gray' ? 'N/A' : formatNumber(result.mad, 4)}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Rule: &lt; 0.006 (Good), &lt; 0.012 (Acc), &ge; 0.015 (Bad)
+            {result.badgeColor === 'gray' ? 'Awaiting transaction data' : 'Rule: < 0.006 (Good), < 0.012 (Acc), ≥ 0.015 (Bad)'}
           </p>
         </div>
 
@@ -255,10 +256,10 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
             Chi-Square (χ² Statistic)
           </span>
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">
-            {formatNumber(result.chiSquare, 2)}
+            {result.badgeColor === 'gray' ? 'N/A' : formatNumber(result.chiSquare, 2)}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Degrees of freedom: df = {result.degreesOfFreedom}
+            {result.badgeColor === 'gray' ? 'Awaiting transaction data' : `Degrees of freedom: df = ${result.degreesOfFreedom}`}
           </p>
         </div>
 
@@ -268,10 +269,10 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
             Statistical p-Value
           </span>
           <div className="text-xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">
-            {result.pValue < 0.0001 ? '< 0.0001' : formatNumber(result.pValue, 4)}
+            {result.badgeColor === 'gray' ? 'N/A' : result.pValue < 0.0001 ? '< 0.0001' : formatNumber(result.pValue, 4)}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            {result.pValue < 0.05 ? 'Significant non-conformity (p < 0.05)' : 'Conforms to natural logs (p ≥ 0.05)'}
+            {result.badgeColor === 'gray' ? 'Awaiting transaction data' : result.pValue < 0.05 ? 'Significant non-conformity (p < 0.05)' : 'Conforms to natural logs (p ≥ 0.05)'}
           </p>
         </div>
 
@@ -283,7 +284,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
             }
           }}
           className={`p-4 rounded-xl border space-y-1 shadow-sm dark:shadow-none transition-all ${
-            result.status === 'BAD' || result.mad >= 0.015
+            (result.status === 'BAD' || result.mad >= 0.015) && result.badgeColor !== 'gray'
               ? 'cursor-pointer hover:ring-2 hover:ring-rose-500/50 hover:shadow-md'
               : ''
           } ${
@@ -291,6 +292,8 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
               ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200'
               : result.badgeColor === 'yellow'
               ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/60 text-amber-800 dark:text-amber-200'
+              : result.badgeColor === 'gray'
+              ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
               : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/60 text-rose-800 dark:text-rose-200'
           }`}
         >
@@ -298,7 +301,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Conformity Rating
             </span>
-            {(result.status === 'BAD' || result.mad >= 0.015) && (
+            {result.badgeColor !== 'gray' && (result.status === 'BAD' || result.mad >= 0.015) && (
               <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.5 rounded border border-rose-300 dark:border-rose-700">
                 Drill-Down &rarr;
               </span>
@@ -308,10 +311,13 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
             {result.badgeColor === 'green' && <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
             {result.badgeColor === 'yellow' && <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />}
             {result.badgeColor === 'red' && <AlertOctagon className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />}
+            {result.badgeColor === 'gray' && <Clock className="w-5 h-5 text-slate-400 shrink-0" />}
             <span className="text-sm font-bold tracking-tight">{result.badgeText}</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            {anomalousDigits.length > 0
+            {result.badgeColor === 'gray'
+              ? 'Awaiting transaction records'
+              : anomalousDigits.length > 0
               ? `${anomalousDigits.length} anomalous digit${anomalousDigits.length > 1 ? 's' : ''} flagged (${anomalousDigits.map((d) => d.digit).join(', ')})`
               : 'No anomalous digit spikes detected'}
           </p>

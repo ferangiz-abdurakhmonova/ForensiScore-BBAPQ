@@ -16,7 +16,7 @@ interface RadarMetric {
   safeBenchmarkNormalized: number; // 0 to 100
   benchmarkStr: string;
   status: 'GOOD' | 'ACCEPTABLE' | 'MODERATE' | 'WARNING' | 'BAD';
-  badgeColor: 'green' | 'yellow' | 'red';
+  badgeColor: 'green' | 'yellow' | 'red' | 'gray';
 }
 
 export const ForensicRadarChart: React.FC<ForensicRadarChartProps> = ({ evaluation }) => {
@@ -194,6 +194,8 @@ export const ForensicRadarChart: React.FC<ForensicRadarChartProps> = ({ evaluati
       ? { stroke: '#10B981', fill: 'rgba(16, 185, 129, 0.25)', dot: '#34D399' }
       : overallBadgeColor === 'yellow'
       ? { stroke: '#F59E0B', fill: 'rgba(245, 158, 11, 0.25)', dot: '#FBBF24' }
+      : overallBadgeColor === 'gray'
+      ? { stroke: '#94A3B8', fill: 'rgba(148, 163, 184, 0.20)', dot: '#CBD5E1' }
       : { stroke: '#EF4444', fill: 'rgba(239, 68, 68, 0.25)', dot: '#F87171' };
 
   return (
@@ -376,6 +378,8 @@ export const ForensicRadarChart: React.FC<ForensicRadarChartProps> = ({ evaluati
                       ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
                       : hoveredMetric.badgeColor === 'yellow'
                       ? 'bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                      : hoveredMetric.badgeColor === 'gray'
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
                       : 'bg-rose-50 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800'
                   }`}
                 >
@@ -433,6 +437,8 @@ export const ForensicRadarChart: React.FC<ForensicRadarChartProps> = ({ evaluati
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : m.badgeColor === 'yellow'
                           ? 'text-amber-600 dark:text-amber-400'
+                          : m.badgeColor === 'gray'
+                          ? 'text-slate-500 dark:text-slate-400'
                           : 'text-rose-600 dark:text-rose-400'
                       }`}
                     >

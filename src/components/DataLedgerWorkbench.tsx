@@ -24,6 +24,7 @@ import {
   Filter,
   AlertOctagon,
   HelpCircle,
+  Trash2,
 } from 'lucide-react';
 
 interface DataLedgerWorkbenchProps {
@@ -38,6 +39,13 @@ interface DataLedgerWorkbenchProps {
   anomalousDigits?: number[];
   benfordResult?: BenfordResult;
   defaultTab?: 'financials' | 'transactions';
+  hasUploadedTransactions?: boolean;
+  hasUploadedFinancials?: boolean;
+  uploadedTransactionsFileName?: string | null;
+  uploadedFinancialsFileName?: string | null;
+  onClearTransactions?: () => void;
+  onClearFinancials?: () => void;
+  onClearCustomData?: (type: 'transactions' | 'financials') => void;
   onClearDrillDownFilter?: () => void;
   onSetDrillDownFilter?: (filter: BenfordDrillDownFilter | null) => void;
   onUpdateTransactions: (txs: Transaction[]) => void;
@@ -60,6 +68,13 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
   anomalousDigits,
   benfordResult,
   defaultTab = 'financials',
+  hasUploadedTransactions,
+  hasUploadedFinancials,
+  uploadedTransactionsFileName,
+  uploadedFinancialsFileName,
+  onClearTransactions,
+  onClearFinancials,
+  onClearCustomData,
   onClearDrillDownFilter,
   onSetDrillDownFilter,
   onUpdateTransactions,
@@ -74,6 +89,13 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
   const [txPage, setTxPage] = useState(1);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [internalTxFileName, setInternalTxFileName] = useState<string | null>(null);
+  const [internalFinFileName, setInternalFinFileName] = useState<string | null>(null);
+
+  const isTxUploaded = hasUploadedTransactions ?? (internalTxFileName !== null);
+  const isFinUploaded = hasUploadedFinancials ?? (internalFinFileName !== null);
+  const currentTxFileName = uploadedTransactionsFileName ?? internalTxFileName;
+  const currentFinFileName = uploadedFinancialsFileName ?? internalFinFileName;
 
   // Sync tab if defaultTab changes (e.g. from drilldown trigger)
   React.useEffect(() => {
@@ -165,6 +187,31 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
   const totalPages = Math.ceil(filteredTxs.length / PAGE_SIZE) || 1;
   const paginatedTxs = filteredTxs.slice((txPage - 1) * PAGE_SIZE, txPage * PAGE_SIZE);
 
+  // Clear custom data handler
+  const handleClearCustomData = (type: 'transactions' | 'financials') => {
+    if (type === 'transactions') {
+      if (txFileInputRef.current) {
+        txFileInputRef.current.value = '';
+      }
+      setInternalTxFileName(null);
+      onClearTransactions?.();
+      onClearCustomData?.('transactions');
+      onCustomCompanyNameChange?.('Custom Company');
+      setUploadErrors([]);
+      setUploadSuccess('Uploaded transactions removed. Empty ledger state restored.');
+    } else {
+      if (finFileInputRef.current) {
+        finFileInputRef.current.value = '';
+      }
+      setInternalFinFileName(null);
+      onClearFinancials?.();
+      onClearCustomData?.('financials');
+      onCustomCompanyNameChange?.('Custom Company');
+      setUploadErrors([]);
+      setUploadSuccess('Uploaded financial statements removed. Empty statements state restored.');
+    }
+  };
+
   // File upload handlers
   const handleTransactionsUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,6 +227,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
         setUploadErrors(errors);
       } else {
         if (errors.length > 0) setUploadErrors(errors);
+        setInternalTxFileName(file.name);
         onUpdateTransactions(data);
         setUploadSuccess(`Successfully loaded ${data.length} transactions from "${file.name}".`);
       }
@@ -208,6 +256,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
         if (errors.length > 0) setUploadErrors(errors);
         // Sort chronologically if period is year
         data.sort((a, b) => a.Period.localeCompare(b.Period));
+        setInternalFinFileName(file.name);
         onUpdateFinancialStatements(data);
         const last = data[data.length - 1];
         setUploadSuccess(
@@ -225,7 +274,8 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${currentFin.Company}_Transactions_Sample.csv`);
+    const safeCompany = (currentFin?.Company && currentFin.Company !== 'Entity' ? currentFin.Company : customCompanyName || 'Custom_Company').replace(/\s+/g, '_');
+    link.setAttribute('download', `${safeCompany}_Transactions_Template.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -237,7 +287,8 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${currentFin.Company}_MultiPeriod_Financials.csv`);
+    const safeCompany = (currentFin?.Company && currentFin.Company !== 'Entity' ? currentFin.Company : customCompanyName || 'Custom_Company').replace(/\s+/g, '_');
+    link.setAttribute('download', `${safeCompany}_MultiPeriod_Financials_Template.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -428,7 +479,15 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 dark:text-white">CSV 1: Transactions Ledger</span>
-              <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">{transactions.length} Records</span>
+              <div className="flex items-center gap-2">
+                {isTxUploaded && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                    <span className="max-w-[130px] truncate">{currentTxFileName || 'Custom File'}</span>
+                  </span>
+                )}
+                <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">{transactions.length} Records</span>
+              </div>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
               Used for Benford&apos;s Law first-digit distribution. Required columns:{' '}
@@ -436,7 +495,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/80">
             <input
               type="file"
               ref={txFileInputRef}
@@ -446,15 +505,27 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
             />
             <button
               onClick={() => txFileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-900 dark:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-900 dark:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
               <span>Upload Transactions CSV</span>
             </button>
 
+            {isTxUploaded && (
+              <button
+                type="button"
+                onClick={() => handleClearCustomData('transactions')}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-400 hover:text-rose-900 dark:hover:text-rose-200 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-800 transition-colors cursor-pointer shadow-xs"
+                title="Clear uploaded transactions file and reset state"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                <span>Clear</span>
+              </button>
+            )}
+
             <button
               onClick={handleDownloadSampleTxs}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               <span>Download Sample CSV</span>
@@ -467,16 +538,26 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 dark:text-white">CSV 2: Multi-Period Financial Statements</span>
-              <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
-                FY{baselinePeriod} vs FY{targetPeriod} ({financialStatements.length} Periods)
-              </span>
+              <div className="flex items-center gap-2">
+                {isFinUploaded && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                    <span className="max-w-[130px] truncate">{currentFinFileName || 'Custom File'}</span>
+                  </span>
+                )}
+                <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                  {financialStatements.length > 0 && baselinePeriod !== 'N/A' && targetPeriod !== 'N/A'
+                    ? `FY${baselinePeriod} vs FY${targetPeriod} (${financialStatements.length} Periods)`
+                    : '0 Periods (Empty State)'}
+                </span>
+              </div>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
               Required for Beneish, Altman, Piotroski, and QoE models. Supports arbitrary multi-year statements.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/80">
             <input
               type="file"
               ref={finFileInputRef}
@@ -486,15 +567,27 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
             />
             <button
               onClick={() => finFileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-900 dark:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-900 dark:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
               <span>Upload Financials CSV</span>
             </button>
 
+            {isFinUploaded && (
+              <button
+                type="button"
+                onClick={() => handleClearCustomData('financials')}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-400 hover:text-rose-900 dark:hover:text-rose-200 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-800 transition-colors cursor-pointer shadow-xs"
+                title="Clear uploaded financial statements file and reset state"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                <span>Clear</span>
+              </button>
+            )}
+
             <button
               onClick={handleDownloadSampleFins}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               <span>Download Template CSV</span>
@@ -516,7 +609,9 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              Multi-Period Financial Statements (FY{baselinePeriod} vs FY{targetPeriod})
+              {financialStatements.length > 0 && baselinePeriod !== 'N/A' && targetPeriod !== 'N/A'
+                ? `Multi-Period Financial Statements (FY${baselinePeriod} vs FY${targetPeriod})`
+                : 'Multi-Period Financial Statements (0 Periods)'}
             </button>
             <button
               onClick={() => setActiveTab('transactions')}
@@ -549,61 +644,128 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
 
         {/* Tab 1: Financial Statements Comparative View */}
         {activeTab === 'financials' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-950/50">
-                  <th className="py-2.5 px-4">Financial Statement Line Item</th>
-                  <th className="py-2.5 px-4">Category</th>
-                  <th className="py-2.5 px-4 text-right">FY{baselinePeriod}</th>
-                  <th className="py-2.5 px-4 text-right">FY{targetPeriod}</th>
-                  <th className="py-2.5 px-4 text-right">Change ($)</th>
-                  <th className="py-2.5 px-4 text-right">Change (%)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-xs">
-                {financialFields.map((field) => {
-                  const val23 = priorFin[field.key] ?? 0;
-                  const val24 = currentFin[field.key] ?? 0;
-                  const diff = val24 - val23;
-                  const pct = val23 !== 0 ? diff / Math.abs(val23) : 0;
-                  const isPositive = diff > 0;
+          activePresetId === 'custom' && (!isFinUploaded || financialStatements.length === 0) ? (
+            <div className="py-16 px-6 text-center space-y-4">
+              <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                <FileSpreadsheet className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  No Custom Financial Statements Available
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                  No multi-period financial statements have been uploaded for {customCompanyName || 'Custom Company'} yet. Upload a CSV file or download the template below to get started.
+                </p>
+              </div>
+              <div className="pt-2 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => finFileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-colors cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Financials CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadSampleFins}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  <span>Download Template CSV</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-950/50">
+                    <th className="py-2.5 px-4">Financial Statement Line Item</th>
+                    <th className="py-2.5 px-4">Category</th>
+                    <th className="py-2.5 px-4 text-right">FY{baselinePeriod}</th>
+                    <th className="py-2.5 px-4 text-right">FY{targetPeriod}</th>
+                    <th className="py-2.5 px-4 text-right">Change ($)</th>
+                    <th className="py-2.5 px-4 text-right">Change (%)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-xs">
+                  {financialFields.map((field) => {
+                    const val23 = priorFin[field.key] ?? 0;
+                    const val24 = currentFin[field.key] ?? 0;
+                    const diff = val24 - val23;
+                    const pct = val23 !== 0 ? diff / Math.abs(val23) : 0;
+                    const isPositive = diff > 0;
 
-                  return (
-                    <tr key={field.key} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 text-slate-800 dark:text-slate-300 transition-colors">
-                      <td className="py-2.5 px-4 font-sans font-medium text-slate-900 dark:text-white">{field.label}</td>
-                      <td className="py-2.5 px-4 font-sans text-slate-500 dark:text-slate-400 text-[11px]">{field.category}</td>
-                      <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 dark:text-slate-400">
-                        {formatCurrency(val23)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right tabular-nums text-slate-900 dark:text-white font-semibold">
-                        {formatCurrency(val24)}
-                      </td>
-                      <td
-                        className={`py-2.5 px-4 text-right tabular-nums font-semibold ${
-                          isPositive ? 'text-emerald-600 dark:text-emerald-400' : diff < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
-                        }`}
-                      >
-                        {diff > 0 ? `+${formatCurrency(diff)}` : formatCurrency(diff)}
-                      </td>
-                      <td
-                        className={`py-2.5 px-4 text-right tabular-nums font-semibold ${
-                          isPositive ? 'text-emerald-600 dark:text-emerald-400' : diff < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
-                        }`}
-                      >
-                        {diff > 0 ? `+${formatPercent(pct, 1)}` : formatPercent(pct, 1)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    return (
+                      <tr key={field.key} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 text-slate-800 dark:text-slate-300 transition-colors">
+                        <td className="py-2.5 px-4 font-sans font-medium text-slate-900 dark:text-white">{field.label}</td>
+                        <td className="py-2.5 px-4 font-sans text-slate-500 dark:text-slate-400 text-[11px]">{field.category}</td>
+                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 dark:text-slate-400">
+                          {formatCurrency(val23)}
+                        </td>
+                        <td className="py-2.5 px-4 text-right tabular-nums text-slate-900 dark:text-white font-semibold">
+                          {formatCurrency(val24)}
+                        </td>
+                        <td
+                          className={`py-2.5 px-4 text-right tabular-nums font-semibold ${
+                            isPositive ? 'text-emerald-600 dark:text-emerald-400' : diff < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
+                          }`}
+                        >
+                          {diff > 0 ? `+${formatCurrency(diff)}` : formatCurrency(diff)}
+                        </td>
+                        <td
+                          className={`py-2.5 px-4 text-right tabular-nums font-semibold ${
+                            isPositive ? 'text-emerald-600 dark:text-emerald-400' : diff < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
+                          }`}
+                        >
+                          {diff > 0 ? `+${formatPercent(pct, 1)}` : formatPercent(pct, 1)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
 
         {/* Tab 2: Transactions Ledger View */}
         {activeTab === 'transactions' && (
-          <div className="space-y-3 p-4">
+          activePresetId === 'custom' && (!isTxUploaded || transactions.length === 0) ? (
+            <div className="py-16 px-6 text-center space-y-4">
+              <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                <FileSpreadsheet className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  No Custom Transactions Available
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                  No transactions ledger has been uploaded for {customCompanyName || 'Custom Company'} yet. Upload a CSV file or download the template below to get started.
+                </p>
+              </div>
+              <div className="pt-2 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => txFileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-colors cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Transactions CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadSampleTxs}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  <span>Download Sample CSV</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 p-4">
             {/* Active Drill-Down Filter Notification Banner */}
             {activeDrillDownFilter?.active && (
               <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-rose-900 dark:text-rose-200">
@@ -749,8 +911,9 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
               </div>
             </div>
           </div>
-        )}
-      </div>
+        )
+      )}
+    </div>
     </section>
   );
 };

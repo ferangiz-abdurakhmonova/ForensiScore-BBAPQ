@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExecutiveSummary } from '../types/audit';
-import { AlertTriangle, CheckCircle2, ShieldAlert, ArrowRight, Building2, Calendar, Search } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ShieldAlert, ArrowRight, Building2, Calendar, Search, Clock } from 'lucide-react';
 
 interface ExecutiveVerdictCardProps {
   summary: ExecutiveSummary;
@@ -22,6 +22,7 @@ export const ExecutiveVerdictCard: React.FC<ExecutiveVerdictCardProps> = ({
   const isHealthy = summary.verdictBadgeColor === 'green';
   const isModerate = summary.verdictBadgeColor === 'yellow';
   const isHighRisk = summary.verdictBadgeColor === 'red';
+  const isWaiting = summary.verdictBadgeColor === 'gray';
 
   return (
     <section id="executive-verdict" className="w-full">
@@ -31,6 +32,8 @@ export const ExecutiveVerdictCard: React.FC<ExecutiveVerdictCardProps> = ({
             ? 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800/60 shadow-md shadow-rose-950/5 dark:shadow-rose-950/30'
             : isModerate
             ? 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/60 shadow-md shadow-amber-950/5 dark:shadow-amber-950/30'
+            : isWaiting
+            ? 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 shadow-sm'
             : 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/60 shadow-md shadow-emerald-950/5 dark:shadow-emerald-950/30'
         }`}
       >
@@ -62,17 +65,25 @@ export const ExecutiveVerdictCard: React.FC<ExecutiveVerdictCardProps> = ({
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-lg text-xs shadow-sm">
               <span className="text-slate-500 dark:text-slate-400">Model Scores:</span>
-              <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                {summary.goodCount} Good
-              </span>
-              <span className="text-slate-300 dark:text-slate-600">/</span>
-              <span className="font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
-                {summary.warningCount} Warning
-              </span>
-              <span className="text-slate-300 dark:text-slate-600">/</span>
-              <span className="font-semibold text-rose-700 dark:text-rose-400 tabular-nums">
-                {summary.badCount} High Risk
-              </span>
+              {isWaiting ? (
+                <span className="font-semibold text-slate-600 dark:text-slate-400">
+                  Awaiting CSV Datasets
+                </span>
+              ) : (
+                <>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                    {summary.goodCount} Good
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600">/</span>
+                  <span className="font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
+                    {summary.warningCount} Warning
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600">/</span>
+                  <span className="font-semibold text-rose-700 dark:text-rose-400 tabular-nums">
+                    {summary.badCount} High Risk
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -93,11 +104,14 @@ export const ExecutiveVerdictCard: React.FC<ExecutiveVerdictCardProps> = ({
                     ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-500/40'
                     : isModerate
                     ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-500/40'
+                    : isWaiting
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
                     : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-500/40'
                 }`}
               >
                 {isHighRisk && <ShieldAlert className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />}
                 {isModerate && <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />}
+                {isWaiting && <Clock className="w-5 h-5 text-slate-500 dark:text-slate-400 shrink-0" />}
                 {isHealthy && <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                 <span>{summary.verdict}</span>
               </div>
@@ -112,12 +126,17 @@ export const ExecutiveVerdictCard: React.FC<ExecutiveVerdictCardProps> = ({
               <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1.5">
                 <span>Methodology Consensus Distribution</span>
                 <span className="font-mono text-slate-700 dark:text-slate-300 font-semibold">
-                  {Math.round((summary.goodCount / summary.totalMethods) * 100)}% Compliance
+                  {isWaiting ? '0% (Awaiting Data)' : `${Math.round((summary.goodCount / summary.totalMethods) * 100)}% Compliance`}
                 </span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex">
                 <div
-                  style={{ width: `${(summary.goodCount / summary.totalMethods) * 100}%` }}
+                  style={{ width: isWaiting ? '0%' : `${(summary.goodCount / summary.totalMethods) * 100}%` }}
+                  className="bg-emerald-500 transition-all duration-500"
+                  title={`${summary.goodCount} Good`}
+                />
+                <div
+                  style={{ width: isWaiting ? '0%' : `${(summary.warningCount / summary.totalMethods) * 100}%` }}
                   className="bg-emerald-500 transition-all duration-500"
                   title={`${summary.goodCount} Good`}
                 />

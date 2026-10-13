@@ -1,6 +1,6 @@
 import React from 'react';
 import { MethodSummaryItem } from '../types/audit';
-import { CheckCircle2, AlertTriangle, AlertOctagon, ChevronRight, HelpCircle } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, AlertOctagon, ChevronRight, HelpCircle, Clock } from 'lucide-react';
 
 interface SummaryResultsTableProps {
   items: MethodSummaryItem[];
@@ -50,6 +50,7 @@ export const SummaryResultsTable: React.FC<SummaryResultsTableProps> = ({
               const isGreen = item.badgeColor === 'green';
               const isYellow = item.badgeColor === 'yellow';
               const isRed = item.badgeColor === 'red';
+              const isGray = item.badgeColor === 'gray';
 
               return (
                 <tr
@@ -103,12 +104,15 @@ export const SummaryResultsTable: React.FC<SummaryResultsTableProps> = ({
                             ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/60'
                             : isYellow
                             ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/60'
+                            : isGray
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
                             : 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700/60'
                         }`}
                       >
                         {isGreen && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
                         {isYellow && <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
                         {isRed && <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />}
+                        {isGray && <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />}
                         <span>{item.badgeText}</span>
                       </span>
                     )}

@@ -5,9 +5,10 @@ interface AltmanGaugeProps {
   zScore: number;
   status: 'GOOD' | 'WARNING' | 'BAD';
   zoneName: string;
+  badgeColor?: 'green' | 'yellow' | 'red' | 'gray';
 }
 
-export const AltmanGauge: React.FC<AltmanGaugeProps> = ({ zScore, status, zoneName }) => {
+export const AltmanGauge: React.FC<AltmanGaugeProps> = ({ zScore, status, zoneName, badgeColor }) => {
   // Semicircular Gauge (180 degrees, from -180° to 0° or -90° to 90°)
   // Range: 0.0 to 4.0
   // Distress: 0.0 to 1.10  (0% to 27.5% of range -> 0° to 49.5°)
@@ -20,7 +21,12 @@ export const AltmanGauge: React.FC<AltmanGaugeProps> = ({ zScore, status, zoneNa
   const needleAngle = -90 + normalizedFraction * 180;
 
   const color =
-    status === 'GOOD'
+    badgeColor === 'gray'
+      ? {
+          stroke: '#94A3B8',
+          badgeBg: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700',
+        }
+      : status === 'GOOD'
       ? {
           stroke: '#10B981',
           badgeBg: 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/60',

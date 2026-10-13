@@ -77,11 +77,17 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
               onChange={(e) => onBaselinePeriodChange(e.target.value)}
               className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-mono font-bold text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 focus:outline-none focus:border-emerald-500 cursor-pointer pr-8 shadow-sm"
             >
-              {availablePeriods.map((period) => (
-                <option key={period} value={period} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono">
-                  FY{period} {period === targetPeriod ? '(Current Target)' : ''}
+              {availablePeriods.length === 0 ? (
+                <option value="N/A" className="bg-white dark:bg-slate-900 text-slate-500 font-mono">
+                  N/A (Awaiting CSV)
                 </option>
-              ))}
+              ) : (
+                availablePeriods.map((period) => (
+                  <option key={period} value={period} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono">
+                    FY{period} {period === targetPeriod ? '(Current Target)' : ''}
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
@@ -103,18 +109,29 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
               onChange={(e) => onTargetPeriodChange(e.target.value)}
               className="bg-white dark:bg-slate-950 text-emerald-700 dark:text-emerald-400 font-mono font-bold text-xs px-3 py-1.5 rounded-lg border border-emerald-500 dark:border-emerald-700/60 hover:border-emerald-600 dark:hover:border-emerald-500 focus:outline-none focus:border-emerald-500 cursor-pointer pr-8 shadow-sm"
             >
-              {availablePeriods.map((period) => (
-                <option key={period} value={period} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono">
-                  FY{period} {period === baselinePeriod ? '(Current Baseline)' : ''}
+              {availablePeriods.length === 0 ? (
+                <option value="N/A" className="bg-white dark:bg-slate-900 text-slate-500 font-mono">
+                  N/A (Awaiting CSV)
                 </option>
-              ))}
+              ) : (
+                availablePeriods.map((period) => (
+                  <option key={period} value={period} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono">
+                    FY{period} {period === baselinePeriod ? '(Current Baseline)' : ''}
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
 
         {/* Dynamic Span Alert / Badge */}
         <div className="pt-4 self-end sm:self-auto">
-          {isSame ? (
+          {availablePeriods.length === 0 ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 shadow-sm">
+              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span>Awaiting Financials CSV</span>
+            </div>
+          ) : isSame ? (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 shadow-sm">
               <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>Identical Periods: Baseline & Target match</span>

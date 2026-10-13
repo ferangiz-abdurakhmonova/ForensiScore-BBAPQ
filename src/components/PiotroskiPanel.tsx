@@ -21,9 +21,10 @@ export const PiotroskiPanel: React.FC<PiotroskiPanelProps> = ({
   baselinePeriod = '2023',
   onJumpToLedger,
 }) => {
-  const isGood = result.fScore >= 7;
-  const isModerate = result.fScore >= 4 && result.fScore <= 6;
-  const isBad = result.fScore <= 3;
+  const isGray = result.badgeColor === 'gray';
+  const isGood = !isGray && result.fScore >= 7;
+  const isModerate = !isGray && result.fScore >= 4 && result.fScore <= 6;
+  const isBad = !isGray && result.fScore <= 3;
 
   const categories = ['Profitability', 'Leverage & Liquidity', 'Operating Efficiency'] as const;
 
@@ -178,20 +179,23 @@ export const PiotroskiPanel: React.FC<PiotroskiPanelProps> = ({
             </span>
             <div className="flex items-baseline gap-3 mt-1">
               <span className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white tracking-tight tabular-nums">
-                {result.fScore} <span className="text-lg text-slate-500 font-normal">/ {result.maxScore}</span>
+                {isGray ? 'N/A' : result.fScore} <span className="text-lg text-slate-500 font-normal">/ {result.maxScore}</span>
               </span>
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-bold border ${
-                  isGood
+                  isGray
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                    : isGood
                     ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/80'
                     : isModerate
                     ? 'bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/80'
                     : 'bg-rose-50 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700/80'
                 }`}
               >
-                {isGood && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                {isModerate && <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />}
-                {isBad && <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />}
+                {isGray && <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />}
+                {!isGray && isGood && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                {!isGray && isModerate && <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />}
+                {!isGray && isBad && <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />}
                 <span>{result.badgeText}</span>
               </span>
             </div>

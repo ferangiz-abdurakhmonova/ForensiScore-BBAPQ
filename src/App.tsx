@@ -7,6 +7,7 @@ import {
   generateBenfordTransactions,
   PRESET_SCENARIOS,
   PresetScenario,
+  EMPTY_FINANCIAL_STATEMENT,
 } from './data/syntheticData';
 import { synthesizeAuditEvaluation } from './utils/auditCalculations';
 import { TopNav } from './components/TopNav';
@@ -44,13 +45,10 @@ export default function App() {
 
   // Custom company & uploaded datasets state
   const [customCompanyName, setCustomCompanyName] = useState<string>('Custom Company');
-  const [customTransactionData, setCustomTransactionData] = useState<Transaction[]>(() =>
-    generateBenfordTransactions('Custom Company', 250, 'benford')
-  );
-  const [customFinancialData, setCustomFinancialData] = useState<FinancialStatement[]>(() => [
-    { ...ACME_FINANCIALS_2023, Company: 'Custom Company' },
-    { ...ACME_FINANCIALS_2024, Company: 'Custom Company' },
-  ]);
+  const [customTransactionData, setCustomTransactionData] = useState<Transaction[] | null>(null);
+  const [customFinancialData, setCustomFinancialData] = useState<FinancialStatement[] | null>(null);
+  const [uploadedTxFileName, setUploadedTxFileName] = useState<string | null>(null);
+  const [uploadedFinFileName, setUploadedFinFileName] = useState<string | null>(null);
 
   // UI state
   const [activePresetId, setActivePresetId] = useState<string>('acme_healthy');
@@ -64,40 +62,63 @@ export default function App() {
   const [ledgerDefaultTab, setLedgerDefaultTab] = useState<'financials' | 'transactions'>('financials');
 
   // Synchronized active statements and transactions
-  const activeFinancialStatements = useMemo(() => {
+  const activeFinancialStatements = useMemo<FinancialStatement[]>(() => {
     if (activePresetId === 'custom') {
-      return financialStatements.map((s) => ({ ...s, Company: customCompanyName || 'Custom Company' }));
+      if (!customFinancialData || customFinancialData.length === 0) {
+        return [];
+      }
+      return customFinancialData.map((s) => ({ ...s, Company: customCompanyName || 'Custom Company' }));
     }
     return financialStatements;
-  }, [financialStatements, activePresetId, customCompanyName]);
+  }, [financialStatements, activePresetId, customCompanyName, customFinancialData]);
 
-  const activeTransactions = useMemo(() => {
+  const activeTransactions = useMemo<Transaction[]>(() => {
     if (activePresetId === 'custom') {
-      return transactions.map((t) => ({ ...t, Company: customCompanyName || 'Custom Company' }));
+      if (!customTransactionData || customTransactionData.length === 0) {
+        return [];
+      }
+      return customTransactionData.map((t) => ({ ...t, Company: customCompanyName || 'Custom Company' }));
     }
     return transactions;
-  }, [transactions, activePresetId, customCompanyName]);
+  }, [transactions, activePresetId, customCompanyName, customTransactionData]);
 
   // Available unique periods sorted chronologically
   const availablePeriods = useMemo(() => {
+    if (activeFinancialStatements.length === 0) {
+      return [];
+    }
     const periods = Array.from(new Set(activeFinancialStatements.map((s) => s.Period)));
     return periods.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }, [activeFinancialStatements]);
 
   // Target (t) and Baseline (t-baseline) financial statements
-  const currentFin = useMemo(() => {
+  const currentFin = useMemo<FinancialStatement>(() => {
+    if (activeFinancialStatements.length === 0) {
+      return {
+        ...EMPTY_FINANCIAL_STATEMENT,
+        Company: activePresetId === 'custom' ? (customCompanyName || 'Custom Company') : 'Entity',
+        Period: targetPeriod !== 'N/A' ? targetPeriod : 'N/A',
+      };
+    }
     return (
       activeFinancialStatements.find((s) => s.Period === targetPeriod) ||
       activeFinancialStatements[activeFinancialStatements.length - 1]
     );
-  }, [activeFinancialStatements, targetPeriod]);
+  }, [activeFinancialStatements, targetPeriod, activePresetId, customCompanyName]);
 
-  const priorFin = useMemo(() => {
+  const priorFin = useMemo<FinancialStatement>(() => {
+    if (activeFinancialStatements.length === 0) {
+      return {
+        ...EMPTY_FINANCIAL_STATEMENT,
+        Company: activePresetId === 'custom' ? (customCompanyName || 'Custom Company') : 'Entity',
+        Period: baselinePeriod !== 'N/A' ? baselinePeriod : 'N/A',
+      };
+    }
     return (
       activeFinancialStatements.find((s) => s.Period === baselinePeriod) ||
       activeFinancialStatements[Math.max(0, activeFinancialStatements.length - 2)]
     );
-  }, [activeFinancialStatements, baselinePeriod]);
+  }, [activeFinancialStatements, baselinePeriod, activePresetId, customCompanyName]);
 
   // Compute live evaluation across the 5 methodologies dynamically based on target and baseline
   const evaluation = useMemo(() => {
@@ -131,24 +152,31 @@ export default function App() {
       setActivePresetId(preset.id);
       if (preset.id === 'custom') {
         const txs =
-          customTransactionData.length > 0
+          customTransactionData && customTransactionData.length > 0
             ? customTransactionData.map((t) => ({ ...t, Company: customCompanyName || 'Custom Company' }))
-            : generateBenfordTransactions(customCompanyName || 'Custom Company', 250, 'benford');
+            : [];
         const statements =
-          customFinancialData.length >= 2
+          customFinancialData && customFinancialData.length >= 2
             ? customFinancialData.map((s) => ({ ...s, Company: customCompanyName || 'Custom Company' }))
-            : [
-                { ...ACME_FINANCIALS_2023, Company: customCompanyName || 'Custom Company' },
-                { ...ACME_FINANCIALS_2024, Company: customCompanyName || 'Custom Company' },
-              ];
+            : customFinancialData && customFinancialData.length === 1
+            ? customFinancialData.map((s) => ({ ...s, Company: customCompanyName || 'Custom Company' }))
+            : [];
 
         setTransactions(txs);
         setFinancialStatements(statements);
-        const sorted = [...statements].sort((a, b) =>
-          a.Period.localeCompare(b.Period, undefined, { numeric: true })
-        );
-        setTargetPeriod(sorted[sorted.length - 1].Period);
-        setBaselinePeriod(sorted[sorted.length - 2]?.Period || sorted[0].Period);
+        if (statements.length >= 2) {
+          const sorted = [...statements].sort((a, b) =>
+            a.Period.localeCompare(b.Period, undefined, { numeric: true })
+          );
+          setTargetPeriod(sorted[sorted.length - 1].Period);
+          setBaselinePeriod(sorted[sorted.length - 2]?.Period || sorted[0].Period);
+        } else if (statements.length === 1) {
+          setTargetPeriod(statements[0].Period);
+          setBaselinePeriod(statements[0].Period);
+        } else {
+          setTargetPeriod('N/A');
+          setBaselinePeriod('N/A');
+        }
         return;
       }
 
@@ -181,6 +209,7 @@ export default function App() {
         Company: t.Company && t.Company !== 'Uploaded Co' ? t.Company : customCompanyName || 'Custom Company',
       }));
       setCustomTransactionData(updated);
+      setUploadedTxFileName('Custom_Transactions.csv');
       setTransactions(updated);
     },
     [customCompanyName]
@@ -205,6 +234,7 @@ export default function App() {
         Company: effectiveCompany,
       }));
       setCustomFinancialData(updated);
+      setUploadedFinFileName('Custom_Financials.csv');
       setFinancialStatements(updated);
       if (updated.length >= 2) {
         const sorted = [...updated].sort((a, b) =>
@@ -220,14 +250,39 @@ export default function App() {
     [customCompanyName]
   );
 
+  // Clear custom data logic
+  const handleClearCustomData = useCallback(
+    (type: 'transactions' | 'financials' | 'all') => {
+      if (type === 'transactions' || type === 'all') {
+        setCustomTransactionData(null);
+        setUploadedTxFileName(null);
+        if (activePresetId === 'custom') {
+          setTransactions([]);
+        }
+      }
+      if (type === 'financials' || type === 'all') {
+        setCustomFinancialData(null);
+        setUploadedFinFileName(null);
+        if (activePresetId === 'custom') {
+          setFinancialStatements([]);
+          setTargetPeriod('N/A');
+          setBaselinePeriod('N/A');
+        }
+      }
+      // Reset custom company name when clearing custom data
+      setCustomCompanyName('Custom Company');
+    },
+    [activePresetId]
+  );
+
   const handleCustomCompanyNameChange = useCallback(
     (name: string) => {
       setCustomCompanyName(name);
       if (activePresetId === 'custom') {
         setTransactions((prev) => prev.map((t) => ({ ...t, Company: name })));
         setFinancialStatements((prev) => prev.map((s) => ({ ...s, Company: name })));
-        setCustomTransactionData((prev) => prev.map((t) => ({ ...t, Company: name })));
-        setCustomFinancialData((prev) => prev.map((s) => ({ ...s, Company: name })));
+        setCustomTransactionData((prev) => (prev ? prev.map((t) => ({ ...t, Company: name })) : null));
+        setCustomFinancialData((prev) => (prev ? prev.map((s) => ({ ...s, Company: name })) : null));
       }
     },
     [activePresetId]
@@ -442,7 +497,9 @@ export default function App() {
                           ? 'bg-emerald-500'
                           : m.badgeColor === 'yellow'
                           ? 'bg-amber-500'
-                          : 'bg-rose-500'
+                          : m.badgeColor === 'red'
+                          ? 'bg-rose-500'
+                          : 'bg-slate-400'
                       }`}
                     />
                   </div>
@@ -530,6 +587,13 @@ export default function App() {
           }
           benfordResult={evaluation.benford}
           defaultTab={ledgerDefaultTab}
+          hasUploadedTransactions={customTransactionData !== null && customTransactionData.length > 0}
+          hasUploadedFinancials={customFinancialData !== null && customFinancialData.length > 0}
+          uploadedTransactionsFileName={uploadedTxFileName}
+          uploadedFinancialsFileName={uploadedFinFileName}
+          onClearTransactions={() => handleClearCustomData('transactions')}
+          onClearFinancials={() => handleClearCustomData('financials')}
+          onClearCustomData={handleClearCustomData}
           onClearDrillDownFilter={handleClearDrillDownFilter}
           onSetDrillDownFilter={setDrillDownFilter}
           onUpdateTransactions={handleUpdateTransactions}

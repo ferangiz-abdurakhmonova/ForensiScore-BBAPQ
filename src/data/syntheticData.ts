@@ -182,6 +182,28 @@ export interface PresetScenario {
   fin2024: FinancialStatement;
 }
 
+export const EMPTY_FINANCIAL_STATEMENT: FinancialStatement = {
+  Company: 'Custom Company',
+  Period: 'N/A',
+  TotalAssets: 0,
+  TotalLiabilities: 0,
+  CurrentAssets: 0,
+  CurrentLiabilities: 0,
+  Receivables: 0,
+  Inventory: 0,
+  PPE: 0,
+  Depreciation: 0,
+  Sales: 0,
+  COGS: 0,
+  SGA: 0,
+  EBIT: 0,
+  NetIncome: 0,
+  CFO: 0,
+  LongTermDebt: 0,
+  SharesOutstanding: 0,
+  RetainedEarnings: 0,
+};
+
 export const PRESET_SCENARIOS: PresetScenario[] = [
   {
     id: 'acme_healthy',
@@ -493,13 +515,10 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     description: 'Upload your own datasets (Transactions & Financials CSV) and customize the company name.',
     company: 'Custom Company',
     expectedOutcome: 'CUSTOM AUDIT (Based on your uploaded CSV datasets)',
-    transactions: generateBenfordTransactions('Custom Company', 250, 'benford'),
-    financialStatements: [
-      { ...ACME_FINANCIALS_2023, Company: 'Custom Company' },
-      { ...ACME_FINANCIALS_2024, Company: 'Custom Company' },
-    ],
-    fin2023: { ...ACME_FINANCIALS_2023, Company: 'Custom Company' },
-    fin2024: { ...ACME_FINANCIALS_2024, Company: 'Custom Company' },
+    transactions: [],
+    financialStatements: [],
+    fin2023: { ...EMPTY_FINANCIAL_STATEMENT, Company: 'Custom Company', Period: '2023' },
+    fin2024: { ...EMPTY_FINANCIAL_STATEMENT, Company: 'Custom Company', Period: '2024' },
   },
 ];
 
@@ -508,6 +527,9 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
  */
 export function transactionsToCSV(transactions: Transaction[]): string {
   const headers = ['Company', 'Date', 'Amount'];
+  if (!transactions || transactions.length === 0) {
+    return [headers.join(','), '"Custom Company",2024-01-15,1250.00'].join('\n');
+  }
   const rows = transactions.map((t) => [
     `"${t.Company.replace(/"/g, '""')}"`,
     t.Date,
@@ -542,6 +564,52 @@ export function financialsToCSV(statements: FinancialStatement[]): string {
     'RetainedEarnings',
   ];
 
+  if (!statements || statements.length === 0) {
+    const templateRow23 = [
+      '"Custom Company"',
+      '2023',
+      100000000,
+      40000000,
+      45000000,
+      20000000,
+      12000000,
+      14000000,
+      40000000,
+      5000000,
+      120000000,
+      75000000,
+      20000000,
+      25000000,
+      18000000,
+      22000000,
+      20000000,
+      10000000,
+      35000000,
+    ];
+    const templateRow24 = [
+      '"Custom Company"',
+      '2024',
+      115000000,
+      45000000,
+      52000000,
+      23000000,
+      14500000,
+      16000000,
+      45000000,
+      5500000,
+      140000000,
+      88000000,
+      23000000,
+      29000000,
+      21000000,
+      26000000,
+      22000000,
+      10000000,
+      42000000,
+    ];
+    return [headers.join(','), templateRow23.join(','), templateRow24.join(',')].join('\n');
+  }
+
   const rows = statements.map((s) => [
     `"${s.Company.replace(/"/g, '""')}"`,
     s.Period,
@@ -563,7 +631,6 @@ export function financialsToCSV(statements: FinancialStatement[]): string {
     s.SharesOutstanding,
     s.RetainedEarnings,
   ]);
-
   return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 }
 

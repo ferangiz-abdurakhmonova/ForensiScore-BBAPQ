@@ -28,6 +28,33 @@ import {
  * 1. BENFORD'S LAW EVALUATION
  */
 export function evaluateBenford(transactions: Transaction[]): BenfordResult {
+  if (!transactions || transactions.length === 0) {
+    const emptyStats: BenfordDigitStat[] = [];
+    for (let d = 1; d <= 9; d++) {
+      emptyStats.push({
+        digit: d,
+        observedCount: 0,
+        observedFreq: 0,
+        expectedFreq: getBenfordProbability(d),
+        expectedCount: 0,
+        diffFreq: 0,
+        absDiffFreq: 0,
+      });
+    }
+    return {
+      digitStats: emptyStats,
+      totalValidTransactions: 0,
+      mad: 0,
+      chiSquare: 0,
+      degreesOfFreedom: 8,
+      pValue: 1,
+      status: 'GOOD',
+      badgeText: 'N/A (Waiting for data)',
+      badgeColor: 'gray',
+      takeaway: 'No transaction data uploaded yet. Waiting for transactions CSV file.',
+    };
+  }
+
   const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
   let totalValid = 0;
 
@@ -126,6 +153,27 @@ export function evaluateBenford(transactions: Transaction[]): BenfordResult {
  * Formula: M = -4.84 + 0.92*DSRI + 0.528*GMI + 0.404*AQI + 0.892*SGI + 0.115*DEPI - 0.172*SGAI + 4.679*TATA - 0.327*LVGI
  */
 export function evaluateBeneish(current: FinancialStatement, prior: FinancialStatement): BeneishResult {
+  const isMissing = !current || !prior || (current.TotalAssets === 0 && current.Sales === 0);
+  if (isMissing) {
+    return {
+      mScore: 0,
+      status: 'GOOD',
+      badgeText: 'N/A (Waiting for data)',
+      badgeColor: 'gray',
+      takeaway: 'Waiting for multi-period financial statements CSV to calculate Beneish M-Score.',
+      variables: {
+        DSRI: { code: 'DSRI', name: 'Days Sales in Receivables Index', value: 0, weight: 0.92, contribution: 0, benchmark: '<= 1.05', formula: '(Rec_t / Sales_t) / (Rec_{t-1} / Sales_{t-1})', interpretation: 'Awaiting data', flagged: false },
+        GMI: { code: 'GMI', name: 'Gross Margin Index', value: 0, weight: 0.528, contribution: 0, benchmark: '<= 1.00', formula: 'GrossMargin_{t-1} / GrossMargin_t', interpretation: 'Awaiting data', flagged: false },
+        AQI: { code: 'AQI', name: 'Asset Quality Index', value: 0, weight: 0.404, contribution: 0, benchmark: '<= 1.00', formula: '[1 - (CA_t + PPE_t)/TA_t] / [1 - (CA_{t-1} + PPE_{t-1})/TA_{t-1}]', interpretation: 'Awaiting data', flagged: false },
+        SGI: { code: 'SGI', name: 'Sales Growth Index', value: 0, weight: 0.892, contribution: 0, benchmark: '<= 1.15', formula: 'Sales_t / Sales_{t-1}', interpretation: 'Awaiting data', flagged: false },
+        DEPI: { code: 'DEPI', name: 'Depreciation Index', value: 0, weight: 0.115, contribution: 0, benchmark: '<= 1.00', formula: 'DeprRate_{t-1} / DeprRate_t', interpretation: 'Awaiting data', flagged: false },
+        SGAI: { code: 'SGAI', name: 'Sales General & Admin Index', value: 0, weight: -0.172, contribution: 0, benchmark: '<= 1.00', formula: '(SGA_t / Sales_t) / (SGA_{t-1} / Sales_{t-1})', interpretation: 'Awaiting data', flagged: false },
+        TATA: { code: 'TATA', name: 'Total Accruals to Total Assets', value: 0, weight: 4.679, contribution: 0, benchmark: '<= 0.03', formula: '(NetIncome_t - CFO_t) / TotalAssets_t', interpretation: 'Awaiting data', flagged: false },
+        LVGI: { code: 'LVGI', name: 'Leverage Index', value: 0, weight: -0.327, contribution: 0, benchmark: '<= 1.00', formula: '(TotalLiab_t / TA_t) / (TotalLiab_{t-1} / TA_{t-1})', interpretation: 'Awaiting data', flagged: false },
+      },
+    };
+  }
+
   // Safe divisions
   const safeDiv = (num: number, den: number, fallback = 1): number => {
     if (!den || den === 0 || !Number.isFinite(den)) return fallback;
@@ -305,6 +353,24 @@ export function evaluateBeneish(current: FinancialStatement, prior: FinancialSta
  * Formula: Z = 6.56*X1 + 3.26*X2 + 6.72*X3 + 1.05*X4
  */
 export function evaluateAltman(current: FinancialStatement): AltmanResult {
+  const isMissing = !current || (current.TotalAssets === 0 && current.Sales === 0);
+  if (isMissing) {
+    return {
+      zScore: 0,
+      status: 'GOOD',
+      zoneName: 'Safe Zone',
+      badgeText: 'N/A (Waiting for data)',
+      badgeColor: 'gray',
+      takeaway: 'Waiting for financial statements CSV to compute Altman Z-Score.',
+      variables: {
+        X1: { code: 'X1', name: 'Working Capital / Total Assets', value: 0, weight: 6.56, contribution: 0, formula: '(CurrentAssets - CurrentLiabilities) / TotalAssets', meaning: 'Awaiting data' },
+        X2: { code: 'X2', name: 'Retained Earnings / Total Assets', value: 0, weight: 3.26, contribution: 0, formula: 'RetainedEarnings / TotalAssets', meaning: 'Awaiting data' },
+        X3: { code: 'X3', name: 'EBIT / Total Assets', value: 0, weight: 6.72, contribution: 0, formula: 'EBIT / TotalAssets', meaning: 'Awaiting data' },
+        X4: { code: 'X4', name: 'Book Equity / Total Liabilities', value: 0, weight: 1.05, contribution: 0, formula: '(TotalAssets - TotalLiabilities) / TotalLiabilities', meaning: 'Awaiting data' },
+      },
+    };
+  }
+
   const safeDiv = (num: number, den: number, fallback = 0): number => {
     if (!den || den === 0 || !Number.isFinite(den)) return fallback;
     const res = num / den;
@@ -410,6 +476,19 @@ export function evaluateAltman(current: FinancialStatement): AltmanResult {
  * 0 to 3 -> BAD / Weak Financial Position (Red badge)
  */
 export function evaluatePiotroski(current: FinancialStatement, prior: FinancialStatement): PiotroskiResult {
+  const isMissing = !current || !prior || (current.TotalAssets === 0 && current.Sales === 0);
+  if (isMissing) {
+    return {
+      fScore: 0,
+      maxScore: 9,
+      status: 'GOOD',
+      badgeText: 'N/A (Waiting for data)',
+      badgeColor: 'gray',
+      takeaway: 'Waiting for multi-period financial statements CSV to calculate Piotroski F-Score.',
+      signals: [],
+    };
+  }
+
   const safeDiv = (num: number, den: number, fallback = 0): number => {
     if (!den || den === 0 || !Number.isFinite(den)) return fallback;
     const res = num / den;
@@ -595,6 +674,21 @@ export function evaluatePiotroski(current: FinancialStatement, prior: FinancialS
  * QoE < 1.0 -> BAD / Weak Quality / Accrual-Driven Earnings (Red badge)
  */
 export function evaluateQoE(current: FinancialStatement): QoEResult {
+  const isMissing = !current || (current.TotalAssets === 0 && current.Sales === 0 && current.CFO === 0 && current.NetIncome === 0);
+  if (isMissing) {
+    return {
+      cfo: 0,
+      netIncome: 0,
+      qoeRatio: 0,
+      accruals: 0,
+      status: 'GOOD',
+      badgeText: 'N/A (Waiting for data)',
+      badgeColor: 'gray',
+      takeaway: 'Waiting for financial statements CSV to evaluate Quality of Earnings.',
+      interpretation: 'Awaiting financial statements data.',
+    };
+  }
+
   const cfo = current.CFO;
   const netIncome = current.NetIncome;
   const accruals = netIncome - cfo;
@@ -750,15 +844,17 @@ export function synthesizeAuditEvaluation(
   let goodCount = 0;
   let warningCount = 0;
   let badCount = 0;
+  let naCount = 0;
 
   for (const item of methodSummaries) {
     if (item.badgeColor === 'green') goodCount++;
     else if (item.badgeColor === 'yellow') warningCount++;
     else if (item.badgeColor === 'red') badCount++;
+    else if (item.badgeColor === 'gray') naCount++;
   }
 
   // Determine overall verdict
-  let verdict: 'STRONG & HEALTHY' | 'MODERATE / MIXED SIGNALS' | 'HIGH RISK / RED FLAGS DETECTED';
+  let verdict: 'STRONG & HEALTHY' | 'MODERATE / MIXED SIGNALS' | 'HIGH RISK / RED FLAGS DETECTED' | 'WAITING FOR DATA';
   let verdictBadgeColor: BadgeColor = 'green';
   let verdictSubtext = '';
 
@@ -766,32 +862,39 @@ export function synthesizeAuditEvaluation(
   const positiveHighlights: string[] = [];
 
   // Check critical red flags
-  if (beneish.status === 'BAD') {
+  if (beneish.status === 'BAD' && beneish.badgeColor !== 'gray') {
     keyRiskFlags.push(`Beneish M-Score flagged possible earnings manipulation (M = ${formatNumber(beneish.mScore, 2)} > -2.22).`);
   }
-  if (altman.status === 'BAD') {
+  if (altman.status === 'BAD' && altman.badgeColor !== 'gray') {
     keyRiskFlags.push(`Altman Z-Score indicates severe bankruptcy / insolvency distress (Z = ${formatNumber(altman.zScore, 2)} < 1.10).`);
   }
-  if (benford.status === 'BAD') {
+  if (benford.status === 'BAD' && benford.badgeColor !== 'gray') {
     keyRiskFlags.push(`Benford's Law nonconformity detected across transaction distributions (MAD = ${formatNumber(benford.mad, 4)} >= 0.015).`);
   }
-  if (piotroski.status === 'BAD') {
+  if (piotroski.status === 'BAD' && piotroski.badgeColor !== 'gray') {
     keyRiskFlags.push(`Piotroski score shows fragile fundamentals (F-Score = ${piotroski.fScore}/9).`);
   }
-  if (qoe.status === 'BAD') {
+  if (qoe.status === 'BAD' && qoe.badgeColor !== 'gray') {
     keyRiskFlags.push(`Operating cash flow fails to cover reported net earnings (QoE = ${formatRatio(qoe.qoeRatio, 2)}x).`);
   }
 
   // Highlights
-  if (altman.status === 'GOOD') positiveHighlights.push(`Solvent balance sheet in Altman Safe Zone (Z = ${formatNumber(altman.zScore, 2)}).`);
-  if (piotroski.status === 'GOOD') positiveHighlights.push(`Robust fundamental momentum with ${piotroski.fScore}/9 Piotroski signals.`);
-  if (benford.status === 'GOOD' || benford.status === 'ACCEPTABLE') positiveHighlights.push(`High transaction integrity conforming with Benford's Law.`);
-  if (beneish.status === 'GOOD') positiveHighlights.push(`Low statistical likelihood of accounting manipulation (M = ${formatNumber(beneish.mScore, 2)}).`);
-  if (qoe.status === 'GOOD') positiveHighlights.push(`Earnings backed by organic operating cash flows (QoE = ${formatRatio(qoe.qoeRatio, 2)}x).`);
+  if (altman.status === 'GOOD' && altman.badgeColor !== 'gray') positiveHighlights.push(`Solvent balance sheet in Altman Safe Zone (Z = ${formatNumber(altman.zScore, 2)}).`);
+  if (piotroski.status === 'GOOD' && piotroski.badgeColor !== 'gray') positiveHighlights.push(`Robust fundamental momentum with ${piotroski.fScore}/9 Piotroski signals.`);
+  if ((benford.status === 'GOOD' || benford.status === 'ACCEPTABLE') && benford.badgeColor !== 'gray') positiveHighlights.push(`High transaction integrity conforming with Benford's Law.`);
+  if (beneish.status === 'GOOD' && beneish.badgeColor !== 'gray') positiveHighlights.push(`Low statistical likelihood of accounting manipulation (M = ${formatNumber(beneish.mScore, 2)}).`);
+  if (qoe.status === 'GOOD' && qoe.badgeColor !== 'gray') positiveHighlights.push(`Earnings backed by organic operating cash flows (QoE = ${formatRatio(qoe.qoeRatio, 2)}x).`);
 
   // Explicit verdict decision logic:
-  // "HIGH RISK / RED FLAGS DETECTED" (if Beneish or Altman indicates severe distress/manipulation, or >= 2 bad counts)
-  if (beneish.status === 'BAD' || altman.status === 'BAD' || badCount >= 2) {
+  if (naCount === 5) {
+    verdict = 'WAITING FOR DATA';
+    verdictBadgeColor = 'gray';
+    verdictSubtext = 'Awaiting uploaded CSV datasets. Upload Transactions and Financial Statements to execute the 5 forensic models.';
+  } else if (naCount >= 1 && goodCount === 0 && warningCount === 0 && badCount === 0) {
+    verdict = 'WAITING FOR DATA';
+    verdictBadgeColor = 'gray';
+    verdictSubtext = 'Partial datasets loaded. Upload remaining CSV data to complete full multi-model audit.';
+  } else if ((beneish.status === 'BAD' && beneish.badgeColor !== 'gray') || (altman.status === 'BAD' && altman.badgeColor !== 'gray') || badCount >= 2) {
     verdict = 'HIGH RISK / RED FLAGS DETECTED';
     verdictBadgeColor = 'red';
     verdictSubtext = 'Immediate forensic audit recommended. Material accounting anomalies or insolvency risks identified.';
@@ -802,7 +905,7 @@ export function synthesizeAuditEvaluation(
   } else {
     verdict = 'STRONG & HEALTHY';
     verdictBadgeColor = 'green';
-    verdictSubtext = 'High financial integrity across all 5 statistical, insolvency, and forensic dimensions.';
+    verdictSubtext = 'High financial integrity across active statistical, insolvency, and forensic dimensions.';
   }
 
   // Automated Divergence Detection Engine
@@ -830,14 +933,18 @@ export function synthesizeAuditEvaluation(
     }));
 
   const isMacroHealthy =
+    altman.badgeColor !== 'gray' &&
+    beneish.badgeColor !== 'gray' &&
     altman.status === 'GOOD' &&
     piotroski.status === 'GOOD' &&
     beneish.status === 'GOOD' &&
     qoe.status === 'GOOD';
 
-  const isMicroSevereAnomaly = benford.status === 'BAD' || benford.mad >= 0.015;
+  const isMicroSevereAnomaly =
+    benford.badgeColor !== 'gray' &&
+    (benford.status === 'BAD' || benford.mad >= 0.015);
 
-  if (isMacroHealthy && isMicroSevereAnomaly) {
+  if (transactions.length > 0 && isMacroHealthy && isMicroSevereAnomaly) {
     divergence = {
       hasDivergence: true,
       type: 'MACRO_HEALTH_MICRO_FRAUD',

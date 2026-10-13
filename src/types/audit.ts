@@ -30,7 +30,7 @@ export interface FinancialStatement {
 }
 
 export type RiskStatus = 'GOOD' | 'ACCEPTABLE' | 'MODERATE' | 'WARNING' | 'BAD';
-export type BadgeColor = 'green' | 'yellow' | 'red';
+export type BadgeColor = 'green' | 'yellow' | 'red' | 'gray';
 
 export interface BenfordDigitStat {
   digit: number;
@@ -201,7 +201,7 @@ export interface BenfordDrillDownFilter {
 }
 
 export interface ExecutiveSummary {
-  verdict: 'STRONG & HEALTHY' | 'MODERATE / MIXED SIGNALS' | 'HIGH RISK / RED FLAGS DETECTED';
+  verdict: 'STRONG & HEALTHY' | 'MODERATE / MIXED SIGNALS' | 'HIGH RISK / RED FLAGS DETECTED' | 'WAITING FOR DATA';
   verdictBadgeColor: BadgeColor;
   verdictSubtext: string;
   goodCount: number;

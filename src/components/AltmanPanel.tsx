@@ -105,16 +105,19 @@ export const AltmanPanel: React.FC<AltmanPanelProps> = ({
               </span>
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-bold border ${
-                  isSafe
+                  result.badgeColor === 'gray'
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                    : isSafe
                     ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/80'
                     : isGrey
                     ? 'bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/80'
                     : 'bg-rose-50 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700/80'
                 }`}
               >
-                {isSafe && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                {isGrey && <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />}
-                {isDistress && <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />}
+                {result.badgeColor === 'gray' && <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />}
+                {result.badgeColor !== 'gray' && isSafe && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                {result.badgeColor !== 'gray' && isGrey && <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />}
+                {result.badgeColor !== 'gray' && isDistress && <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />}
                 <span>{result.badgeText}</span>
               </span>
             </div>
@@ -125,6 +128,7 @@ export const AltmanPanel: React.FC<AltmanPanelProps> = ({
             zScore={result.zScore}
             status={result.status}
             zoneName={result.zoneName}
+            badgeColor={result.badgeColor}
           />
 
           <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed border-t border-slate-200 dark:border-slate-800/80 pt-3">

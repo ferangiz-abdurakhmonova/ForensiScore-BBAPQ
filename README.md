@@ -2,12 +2,10 @@
 
 > ⚠️ **Notice: Test & Prototype Version (v0.1.0)**  
 > This platform is currently an experimental research prototype released for methodology testing, peer review, and academic validation. Formulas, threshold benchmarks, and calculations are subject to active verification.
-
-> Integrated 5D Evaluation: **Benford's Law (MAD)** · **Beneish M-Score** · **Altman Z-Score** · **Piotroski F-Score** · **Quality of Earnings (QoE)**
-
-#### Live Interactive Demo
 You can explore the live prototype directly in your browser without any installation or account setup:
 **[Launch ForensiScore BBAPQ](https://forensi-score-bbapq-4tok.vercel.app/)**
+
+> Integrated 5D Evaluation: **Benford's Law (MAD)** · **Beneish M-Score** · **Altman Z-Score** · **Piotroski F-Score** · **Quality of Earnings (QoE)**
 
 ForensiScore BBAPQ is an advanced forensic accounting and audit technology platform designed to detect financial irregularities and assess corporate health through automated analysis of transaction ledgers and multi-period financial statements.
 

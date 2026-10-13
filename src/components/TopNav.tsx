@@ -97,14 +97,6 @@ export const TopNav: React.FC<TopNavProps> = ({
             <span>Export Results</span>
           </button>
           
-          <a 
-            href="https://github.com/ferangiz-abdurakhmonova/AuditScore-5.1/issues/new?title=[Anomaly/Bug]+" 
-            target="_blank" 
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-          >
-            Feedback
-          </a>
         </div>
       </div>
     </header>

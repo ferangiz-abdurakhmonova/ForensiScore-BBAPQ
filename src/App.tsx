@@ -18,7 +18,6 @@ import { BeneishPanel } from './components/BeneishPanel';
 import { AltmanPanel } from './components/AltmanPanel';
 import { PiotroskiPanel } from './components/PiotroskiPanel';
 import { QoEPanel } from './components/QoEPanel';
-import { ForensicTrendPanel } from './components/ForensicTrendPanel';
 import { ForensicRadarChart } from './components/ForensicRadarChart';
 import { DataLedgerWorkbench } from './components/DataLedgerWorkbench';
 import { ExportModal } from './components/ExportModal';
@@ -261,14 +260,6 @@ export default function App() {
       badgeColor: evaluation.qoe.badgeColor,
       summaryVal: `${evaluation.qoe.qoeRatio.toFixed(2)}x`,
     },
-    {
-      id: 'trends',
-      name: 'Historical Trends',
-      tag: 'Timeline View',
-      icon: Layers,
-      badgeColor: 'green',
-      summaryVal: 'View History',
-    },
   ];
 
   return (
@@ -419,9 +410,6 @@ export default function App() {
                 baselinePeriod={baselinePeriod}
                 onJumpToLedger={() => handleJumpToLedger('financials')}
               />
-            )}
-            {activeMethodTab === 'trends' && (
-              <ForensicTrendPanel financialStatements={financialStatements} />
             )}
           </div>
         </section>

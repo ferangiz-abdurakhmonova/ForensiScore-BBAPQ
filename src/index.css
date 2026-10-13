@@ -19,3 +19,13 @@ html:not(.dark) {
   color-scheme: light;
 }
 
+@media print {
+  body * { visibility: hidden !important; }
+  .print-printable, .print-printable * { visibility: visible !important; }
+  .print-printable {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+  }
+}

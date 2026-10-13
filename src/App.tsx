@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { FinancialStatement, Transaction, BenfordDrillDownFilter } from './types/audit';
 import {
-  ACME_FINANCIALS_2023,
-  ACME_FINANCIALS_2024,
-  ACME_MULTI_PERIODS,
+  ALPHA_FINANCIALS_2023,
+  ALPHA_FINANCIALS_2024,
+  ALPHA_MULTI_PERIODS,
   generateBenfordTransactions,
   PRESET_SCENARIOS,
   PresetScenario,
@@ -37,9 +37,9 @@ import {
 export default function App() {
   // State for dataset
   const [transactions, setTransactions] = useState<Transaction[]>(() =>
-    generateBenfordTransactions('ACME Inc', 250, 'benford')
+    generateBenfordTransactions('Company Alpha', 250, 'benford')
   );
-  const [financialStatements, setFinancialStatements] = useState<FinancialStatement[]>(() => ACME_MULTI_PERIODS);
+  const [financialStatements, setFinancialStatements] = useState<FinancialStatement[]>(() => ALPHA_MULTI_PERIODS);
   const [targetPeriod, setTargetPeriod] = useState<string>('2024');
   const [baselinePeriod, setBaselinePeriod] = useState<string>('2023');
 
@@ -138,9 +138,9 @@ export default function App() {
     setIsGenerating(true);
     setActivePresetId('acme_healthy');
     setTimeout(() => {
-      const newTxs = generateBenfordTransactions('ACME Inc', 250, 'benford');
+      const newTxs = generateBenfordTransactions('Company Alpha', 250, 'benford');
       setTransactions(newTxs);
-      setFinancialStatements(ACME_MULTI_PERIODS);
+      setFinancialStatements(ALPHA_MULTI_PERIODS);
       setTargetPeriod('2024');
       setBaselinePeriod('2023');
       setIsGenerating(false);
@@ -182,12 +182,12 @@ export default function App() {
 
       const txs =
         preset.id === 'starlight_benford'
-          ? generateBenfordTransactions('Starlight Trade', 280, 'anomalous')
+          ? generateBenfordTransactions('Company Delta', 280, 'anomalous')
           : preset.id === 'apex_manipulation'
-          ? generateBenfordTransactions('Apex Dynamics', 200, 'benford')
+          ? generateBenfordTransactions('Company Beta', 200, 'benford')
           : preset.id === 'solv_distress'
-          ? generateBenfordTransactions('Solvent Dynamics', 180, 'benford')
-          : generateBenfordTransactions('ACME Inc', 250, 'benford');
+          ? generateBenfordTransactions('Company Gamma', 180, 'benford')
+          : generateBenfordTransactions('Company Alpha', 250, 'benford');
 
       setTransactions(txs);
       const statements =

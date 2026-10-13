@@ -341,7 +341,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/70 dark:hover:bg-emerald-900/70 border border-emerald-300 dark:border-emerald-700/60 rounded-lg transition-colors whitespace-nowrap shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Generate Synthetic Data (ACME Inc)</span>
+            <span>Generate Synthetic Data (Company Alpha)</span>
           </button>
         </div>
       </div>

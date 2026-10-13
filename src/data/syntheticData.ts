@@ -4,7 +4,7 @@ import { FinancialStatement, Transaction } from '../types/audit';
  * Generates transactions according to Benford's law or with anomalies
  */
 export function generateBenfordTransactions(
-  company: string = 'ACME Inc',
+  company: string = 'Company Alpha',
   count: number = 220,
   mode: 'benford' | 'anomalous' = 'benford'
 ): Transaction[] {
@@ -68,11 +68,11 @@ export function generateBenfordTransactions(
 }
 
 /**
- * Standard baseline financial statements for ACME Inc (2023 & 2024)
+ * Standard baseline financial statements for Company Alpha (2023 & 2024)
  * High-performing, clean, solvent company
  */
-export const ACME_FINANCIALS_2021: FinancialStatement = {
-  Company: 'ACME Inc',
+export const ALPHA_FINANCIALS_2021: FinancialStatement = {
+  Company: 'Company Alpha',
   Period: '2021',
   TotalAssets: 102000000,
   TotalLiabilities: 44000000,
@@ -93,8 +93,8 @@ export const ACME_FINANCIALS_2021: FinancialStatement = {
   RetainedEarnings: 36000000,
 };
 
-export const ACME_FINANCIALS_2022: FinancialStatement = {
-  Company: 'ACME Inc',
+export const ALPHA_FINANCIALS_2022: FinancialStatement = {
+  Company: 'Company Alpha',
   Period: '2022',
   TotalAssets: 114000000,
   TotalLiabilities: 46000000,
@@ -115,8 +115,8 @@ export const ACME_FINANCIALS_2022: FinancialStatement = {
   RetainedEarnings: 44000000,
 };
 
-export const ACME_FINANCIALS_2023: FinancialStatement = {
-  Company: 'ACME Inc',
+export const ALPHA_FINANCIALS_2023: FinancialStatement = {
+  Company: 'Company Alpha',
   Period: '2023',
   TotalAssets: 125000000,
   TotalLiabilities: 48000000,
@@ -137,8 +137,8 @@ export const ACME_FINANCIALS_2023: FinancialStatement = {
   RetainedEarnings: 52000000,
 };
 
-export const ACME_FINANCIALS_2024: FinancialStatement = {
-  Company: 'ACME Inc',
+export const ALPHA_FINANCIALS_2024: FinancialStatement = {
+  Company: 'Company Alpha',
   Period: '2024',
   TotalAssets: 142000000,
   TotalLiabilities: 51000000,
@@ -159,11 +159,11 @@ export const ACME_FINANCIALS_2024: FinancialStatement = {
   RetainedEarnings: 68000000,
 };
 
-export const ACME_MULTI_PERIODS = [
-  ACME_FINANCIALS_2021,
-  ACME_FINANCIALS_2022,
-  ACME_FINANCIALS_2023,
-  ACME_FINANCIALS_2024,
+export const ALPHA_MULTI_PERIODS = [
+  ALPHA_FINANCIALS_2021,
+  ALPHA_FINANCIALS_2022,
+  ALPHA_FINANCIALS_2023,
+  ALPHA_FINANCIALS_2024,
 ];
 
 /**
@@ -207,27 +207,27 @@ export const EMPTY_FINANCIAL_STATEMENT: FinancialStatement = {
 export const PRESET_SCENARIOS: PresetScenario[] = [
   {
     id: 'acme_healthy',
-    name: 'ACME Inc (Clean & Healthy)',
+    name: 'Company Alpha (Clean Baseline)',
     shortTag: 'Clean Baseline',
     description: 'Robust solvency (Z > 3.5), sound accruals (QoE 1.2x), compliant Benford distribution, and low manipulation probability.',
-    company: 'ACME Inc',
+    company: 'Company Alpha',
     expectedOutcome: 'STRONG & HEALTHY (5/5 Green Badges)',
-    transactions: generateBenfordTransactions('ACME Inc', 250, 'benford'),
-    financialStatements: ACME_MULTI_PERIODS,
-    fin2023: ACME_FINANCIALS_2023,
-    fin2024: ACME_FINANCIALS_2024,
+    transactions: generateBenfordTransactions('Company Alpha', 250, 'benford'),
+    financialStatements: ALPHA_MULTI_PERIODS,
+    fin2023: ALPHA_FINANCIALS_2023,
+    fin2024: ALPHA_FINANCIALS_2024,
   },
   {
     id: 'apex_manipulation',
-    name: 'Apex Dynamics (High Manipulation Risk)',
+    name: 'Company Beta (Earnings Manipulation)',
     shortTag: 'Earnings Manipulation',
     description: 'Aggressive revenue timing, surging receivables, paper net income unbacked by operating cash (QoE = 0.35x), tripping Beneish M-Score.',
-    company: 'Apex Dynamics',
+    company: 'Company Beta',
     expectedOutcome: 'HIGH RISK / RED FLAGS (Beneish M-Score & QoE Flagged)',
-    transactions: generateBenfordTransactions('Apex Dynamics', 200, 'benford'),
+    transactions: generateBenfordTransactions('Company Beta', 200, 'benford'),
     financialStatements: [
       {
-        Company: 'Apex Dynamics',
+        Company: 'Company Beta',
         Period: '2021',
         TotalAssets: 92000000,
         TotalLiabilities: 45000000,
@@ -248,7 +248,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         RetainedEarnings: 29000000,
       },
       {
-        Company: 'Apex Dynamics',
+        Company: 'Company Beta',
         Period: '2022',
         TotalAssets: 101000000,
         TotalLiabilities: 49000000,
@@ -269,7 +269,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         RetainedEarnings: 33000000,
       },
       {
-        Company: 'Apex Dynamics',
+        Company: 'Company Beta',
         Period: '2023',
         TotalAssets: 110000000,
         TotalLiabilities: 55000000,
@@ -290,7 +290,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         RetainedEarnings: 38000000,
       },
       {
-        Company: 'Apex Dynamics',
+        Company: 'Company Beta',
         Period: '2024',
         TotalAssets: 145000000,
         TotalLiabilities: 82000000,
@@ -312,7 +312,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       },
     ],
     fin2023: {
-      Company: 'Apex Dynamics',
+      Company: 'Company Beta',
       Period: '2023',
       TotalAssets: 110000000,
       TotalLiabilities: 55000000,
@@ -333,7 +333,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       RetainedEarnings: 38000000,
     },
     fin2024: {
-      Company: 'Apex Dynamics',
+      Company: 'Company Beta',
       Period: '2024',
       TotalAssets: 145000000,
       TotalLiabilities: 82000000,
@@ -356,15 +356,15 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
   },
   {
     id: 'solv_distress',
-    name: 'Solvent Dynamics (Insolvency & Distress)',
+    name: 'Company Gamma (Bankruptcy Distress)',
     shortTag: 'Bankruptcy Distress',
     description: 'Deteriorating working capital, negative operating earnings, crushing debt load (Z < 0.90), and Piotroski deterioration (F-Score <= 3).',
-    company: 'Solvent Dynamics',
+    company: 'Company Gamma',
     expectedOutcome: 'HIGH RISK / RED FLAGS (Altman Distress & Low Piotroski)',
-    transactions: generateBenfordTransactions('Solvent Dynamics', 180, 'benford'),
+    transactions: generateBenfordTransactions('Company Gamma', 180, 'benford'),
     financialStatements: [
       {
-        Company: 'Solvent Dynamics',
+        Company: 'Company Gamma',
         Period: '2021',
         TotalAssets: 104000000,
         TotalLiabilities: 58000000,
@@ -385,7 +385,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         RetainedEarnings: 14000000,
       },
       {
-        Company: 'Solvent Dynamics',
+        Company: 'Company Gamma',
         Period: '2022',
         TotalAssets: 100000000,
         TotalLiabilities: 61000000,
@@ -406,7 +406,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         RetainedEarnings: 11000000,
       },
       {
-        Company: 'Solvent Dynamics',
+        Company: 'Company Gamma',
         Period: '2023',
         TotalAssets: 95000000,
         TotalLiabilities: 65000000,
@@ -427,7 +427,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         RetainedEarnings: 8000000,
       },
       {
-        Company: 'Solvent Dynamics',
+        Company: 'Company Gamma',
         Period: '2024',
         TotalAssets: 88000000,
         TotalLiabilities: 81000000,
@@ -449,7 +449,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       },
     ],
     fin2023: {
-      Company: 'Solvent Dynamics',
+      Company: 'Company Gamma',
       Period: '2023',
       TotalAssets: 95000000,
       TotalLiabilities: 65000000,
@@ -470,7 +470,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       RetainedEarnings: 8000000,
     },
     fin2024: {
-      Company: 'Solvent Dynamics',
+      Company: 'Company Gamma',
       Period: '2024',
       TotalAssets: 88000000,
       TotalLiabilities: 81000000,
@@ -493,20 +493,20 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
   },
   {
     id: 'starlight_benford',
-    name: 'Starlight Trade (Transaction Anomaly / Fraud)',
+    name: 'Company Delta (Benford Anomaly)',
     shortTag: 'Benford Anomaly',
     description: 'Suspicious procurement ledger with excessive round amounts and unnatural digit clustering (MAD >= 0.020, high Chi-square).',
-    company: 'Starlight Trade',
+    company: 'Company Delta',
     expectedOutcome: 'WARNING / ANOMALIES (Benford Bad / Chi-Sq High)',
-    transactions: generateBenfordTransactions('Starlight Trade', 280, 'anomalous'),
+    transactions: generateBenfordTransactions('Company Delta', 280, 'anomalous'),
     financialStatements: [
-      { ...ACME_FINANCIALS_2021, Company: 'Starlight Trade' },
-      { ...ACME_FINANCIALS_2022, Company: 'Starlight Trade' },
-      { ...ACME_FINANCIALS_2023, Company: 'Starlight Trade' },
-      { ...ACME_FINANCIALS_2024, Company: 'Starlight Trade' },
+      { ...ALPHA_FINANCIALS_2021, Company: 'Company Delta' },
+      { ...ALPHA_FINANCIALS_2022, Company: 'Company Delta' },
+      { ...ALPHA_FINANCIALS_2023, Company: 'Company Delta' },
+      { ...ALPHA_FINANCIALS_2024, Company: 'Company Delta' },
     ],
-    fin2023: { ...ACME_FINANCIALS_2023, Company: 'Starlight Trade' },
-    fin2024: { ...ACME_FINANCIALS_2024, Company: 'Starlight Trade' },
+    fin2023: { ...ALPHA_FINANCIALS_2023, Company: 'Company Delta' },
+    fin2024: { ...ALPHA_FINANCIALS_2024, Company: 'Company Delta' },
   },
   {
     id: 'custom',

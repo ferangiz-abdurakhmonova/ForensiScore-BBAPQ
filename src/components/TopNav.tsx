@@ -77,7 +77,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             onClick={onGenerateSynthetic}
             disabled={isGenerating}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700/50 rounded-lg transition-colors whitespace-nowrap disabled:opacity-50"
-            title="Preload ACME Inc synthetic transactions and multi-period statements"
+            title="Preload Company Alpha synthetic transactions and multi-period statements"
           >
             {isGenerating ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />

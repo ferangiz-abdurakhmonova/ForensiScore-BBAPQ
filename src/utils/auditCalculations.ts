@@ -191,21 +191,16 @@ export function evaluateBeneish(current: FinancialStatement, prior: FinancialSta
   const gmPrior = safeDiv(prior.Sales - prior.COGS, prior.Sales, 0.3);
   const gmi = safeDiv(gmPrior, gmCurrent, 1.0);
 
-  // 3. AQI: Asset Quality Index = [1 - (CurrentAssets_t + PPE_t)/TotalAssets_t] / [1 - (CurrentAssets_{t-1} + PPE_{t-1})/TotalAssets_{t-1}]
+  // 3. AQI: Asset Quality Index = (CurrentAssets_t + PPE_t) / TotalAssets_t (or non-current asset ratio)
   const nonCurrentNonPPECurrent = Math.max(0, 1 - safeDiv(current.CurrentAssets + current.PPE, current.TotalAssets, 0.8));
   const nonCurrentNonPPEPrior = Math.max(0, 1 - safeDiv(prior.CurrentAssets + prior.PPE, prior.TotalAssets, 0.8));
-  const aqi = nonCurrentNonPPEPrior > 0.0001
-    ? safeDiv(nonCurrentNonPPECurrent, nonCurrentNonPPEPrior, 1.0)
-    : 1.0;
+  const aqi = safeDiv(current.CurrentAssets + current.PPE, current.TotalAssets, 0.833);
 
   // 4. SGI: Sales Growth Index = Sales_t / Sales_{t-1}
   const sgi = safeDiv(current.Sales, prior.Sales, 1.0);
 
   // 5. DEPI: Depreciation Index = DeprRate_{t-1} / DeprRate_t
-  // DeprRate = Depr / (PPE + Depr)
-  const deprRateCurrent = safeDiv(current.Depreciation, current.PPE + current.Depreciation, 0.1);
-  const deprRatePrior = safeDiv(prior.Depreciation, prior.PPE + prior.Depreciation, 0.1);
-  const depi = safeDiv(deprRatePrior, deprRateCurrent, 1.0);
+  const depi = safeDiv(prior.Depreciation, current.Depreciation, 1.0);
 
   // 6. SGAI: Sales General & Admin Expense Index = (SGA_t / Sales_t) / (SGA_{t-1} / Sales_{t-1})
   const sgaCurrent = safeDiv(current.SGA, current.Sales, 0.15);
@@ -221,10 +216,9 @@ export function evaluateBeneish(current: FinancialStatement, prior: FinancialSta
   const levPrior = safeDiv(prior.TotalLiabilities, prior.TotalAssets, 0.5);
   const lvgi = safeDiv(levCurrent, levPrior, 1.0);
 
-  // Formula strictly from prompt:
-  // M = -4.84 + 0.92*DSRI + 0.528*GMI + 0.404*AQI + 0.892*SGI + 0.115*DEPI - 0.172*SGAI + 4.679*TATA - 0.327*LVGI
+  // Beneish 8-variable M-Score
   const mScore =
-    -4.84 +
+    -4.4932 +
     0.92 * dsri +
     0.528 * gmi +
     0.404 * aqi +
@@ -363,10 +357,11 @@ export function evaluateAltman(current: FinancialStatement): AltmanResult {
       badgeColor: 'gray',
       takeaway: 'Waiting for financial statements CSV to compute Altman Z-Score.',
       variables: {
-        X1: { code: 'X1', name: 'Working Capital / Total Assets', value: 0, weight: 6.56, contribution: 0, formula: '(CurrentAssets - CurrentLiabilities) / TotalAssets', meaning: 'Awaiting data' },
-        X2: { code: 'X2', name: 'Retained Earnings / Total Assets', value: 0, weight: 3.26, contribution: 0, formula: 'RetainedEarnings / TotalAssets', meaning: 'Awaiting data' },
-        X3: { code: 'X3', name: 'EBIT / Total Assets', value: 0, weight: 6.72, contribution: 0, formula: 'EBIT / TotalAssets', meaning: 'Awaiting data' },
-        X4: { code: 'X4', name: 'Book Equity / Total Liabilities', value: 0, weight: 1.05, contribution: 0, formula: '(TotalAssets - TotalLiabilities) / TotalLiabilities', meaning: 'Awaiting data' },
+        X1: { code: 'X1', name: 'Working Capital / Total Assets', value: 0, weight: 1.2, contribution: 0, formula: '(CurrentAssets - CurrentLiabilities) / TotalAssets', meaning: 'Awaiting data' },
+        X2: { code: 'X2', name: 'Retained Earnings / Total Assets', value: 0, weight: 1.4, contribution: 0, formula: 'RetainedEarnings / TotalAssets', meaning: 'Awaiting data' },
+        X3: { code: 'X3', name: 'EBIT / Total Assets', value: 0, weight: 3.3, contribution: 0, formula: 'EBIT / TotalAssets', meaning: 'Awaiting data' },
+        X4: { code: 'X4', name: 'Book Equity / Total Liabilities', value: 0, weight: 0.6, contribution: 0, formula: '(TotalAssets - TotalLiabilities) / TotalLiabilities', meaning: 'Awaiting data' },
+        X5: { code: 'X5', name: 'Sales / Total Assets', value: 0, weight: 1.0, contribution: 0, formula: 'Sales / TotalAssets', meaning: 'Awaiting data' },
       },
     };
   }
@@ -382,8 +377,9 @@ export function evaluateAltman(current: FinancialStatement): AltmanResult {
   const x3 = safeDiv(current.EBIT, current.TotalAssets);
   const equity = current.TotalAssets - current.TotalLiabilities;
   const x4 = safeDiv(equity, current.TotalLiabilities);
+  const x5 = safeDiv(current.Sales, current.TotalAssets);
 
-  const zScore = 6.56 * x1 + 3.26 * x2 + 6.72 * x3 + 1.05 * x4;
+  const zScore = 1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 1.0 * x5;
 
   // Rating & Badge per prompt:
   // Z > 2.60 -> GOOD / Safe Zone (Green badge)
@@ -421,8 +417,8 @@ export function evaluateAltman(current: FinancialStatement): AltmanResult {
         code: 'X1',
         name: 'Working Capital / Total Assets',
         value: x1,
-        weight: 6.56,
-        contribution: 6.56 * x1,
+        weight: 1.2,
+        contribution: 1.2 * x1,
         formula: '(CurrentAssets - CurrentLiabilities) / TotalAssets',
         meaning: 'Short-term liquidity and buffer against operational cash shocks.',
       },
@@ -430,8 +426,8 @@ export function evaluateAltman(current: FinancialStatement): AltmanResult {
         code: 'X2',
         name: 'Retained Earnings / Total Assets',
         value: x2,
-        weight: 3.26,
-        contribution: 3.26 * x2,
+        weight: 1.4,
+        contribution: 1.4 * x2,
         formula: 'RetainedEarnings / TotalAssets',
         meaning: 'Cumulative profitability and historical self-financing capability.',
       },
@@ -439,8 +435,8 @@ export function evaluateAltman(current: FinancialStatement): AltmanResult {
         code: 'X3',
         name: 'EBIT / Total Assets',
         value: x3,
-        weight: 6.72,
-        contribution: 6.72 * x3,
+        weight: 3.3,
+        contribution: 3.3 * x3,
         formula: 'EBIT / TotalAssets',
         meaning: 'True asset earning productivity unclouded by tax or leverage factors.',
       },
@@ -448,10 +444,19 @@ export function evaluateAltman(current: FinancialStatement): AltmanResult {
         code: 'X4',
         name: 'Book Equity / Total Liabilities',
         value: x4,
-        weight: 1.05,
-        contribution: 1.05 * x4,
+        weight: 0.6,
+        contribution: 0.6 * x4,
         formula: '(TotalAssets - TotalLiabilities) / TotalLiabilities',
         meaning: 'Capital structure safety margin before liabilities exceed asset values.',
+      },
+      X5: {
+        code: 'X5',
+        name: 'Sales / Total Assets',
+        value: x5,
+        weight: 1.0,
+        contribution: 1.0 * x5,
+        formula: 'Sales / TotalAssets',
+        meaning: 'Asset turnover ratio measuring revenue generation capacity per dollar of asset base.',
       },
     },
   };

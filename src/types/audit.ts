@@ -107,6 +107,7 @@ export interface AltmanResult {
     X2: AltmanVariableDetail;
     X3: AltmanVariableDetail;
     X4: AltmanVariableDetail;
+    X5?: AltmanVariableDetail;
   };
 }
 

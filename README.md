@@ -3,7 +3,6 @@
 > ⚠️ **Notice: Test & Prototype Version (v0.1.0)**  
 > This platform is currently an experimental research prototype released for methodology testing, peer review, and academic validation. Formulas, threshold benchmarks, and calculations are subject to active verification.
 
-> **Forensic Accounting & Insolvency Engine**  
 > Integrated 5D Evaluation: **Benford's Law (MAD)** · **Beneish M-Score** · **Altman Z-Score** · **Piotroski F-Score** · **Quality of Earnings (QoE)**
 
 ForensiScore BBAPQ is an advanced forensic accounting and audit technology platform designed to detect financial irregularities and assess corporate health through automated analysis of transaction ledgers and multi-period financial statements.

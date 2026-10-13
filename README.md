@@ -5,10 +5,6 @@
 
 ForensiScore BBAPQ is an advanced forensic accounting and audit technology platform designed to detect financial irregularities and assess corporate health through automated analysis of transaction ledgers and multi-period financial statements.
 
-# AuditScore
-
-AuditScore is an advanced forensic accounting and audit technology platform designed to detect financial irregularities and assess corporate health through automated analysis of transaction ledgers and multi-period financial statements.
-
 ## Core Forensic Capabilities
 
 AuditScore evaluates datasets across five key quantitative dimensions:

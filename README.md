@@ -1,4 +1,4 @@
-> ⚠️ **Notice: Test & Prototype Version (v0.1.0-beta)**  
+> ⚠️ **Notice: Test & Prototype Version (version": "0.1.0)**  
 > This platform is currently an experimental research prototype released for methodology testing, peer review, and academic validation. Formulas, threshold benchmarks, and calculations are subject to active verification.
 
 # AuditScore

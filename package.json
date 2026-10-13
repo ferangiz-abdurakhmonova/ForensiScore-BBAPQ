@@ -1,7 +1,7 @@
 {
-  "name": "react-example",
-  "private": true,
-  "version": "0.0.0",
+  "name": "auditscore-platform",
+  "version": "1.0.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",

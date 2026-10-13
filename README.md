@@ -3,17 +3,20 @@
 > ⚠️ **Notice: Test & Prototype Version (v0.1.0)**  
 > This platform is currently an experimental research prototype released for methodology testing, peer review, and academic validation. Formulas, threshold benchmarks, and calculations are subject to active verification.
 
+> **Forensic Accounting & Insolvency Engine**  
+> Integrated 5D Evaluation: **Benford's Law (MAD)** · **Beneish M-Score** · **Altman Z-Score** · **Piotroski F-Score** · **Quality of Earnings (QoE)**
+
 ForensiScore BBAPQ is an advanced forensic accounting and audit technology platform designed to detect financial irregularities and assess corporate health through automated analysis of transaction ledgers and multi-period financial statements.
 
 ## Core Forensic Capabilities
 
-AuditScore evaluates datasets across five key quantitative dimensions:
+ForensiScore BBAPQ evaluates datasets across five key quantitative dimensions:
 
-1.  **Benford's Law (Transaction Forensics):** Analyzes the leading digit frequency of ledger transactions to identify unnatural patterns or synthetic entries, featuring Mean Absolute Deviation (MAD) scoring and anomalous transaction drill-down.
-2.  **Beneish M-Score:** An 8-factor probabilistic model designed to detect earnings manipulation and financial statement distortion.
-3.  **Altman Z-Score:** A 4-factor insolvency risk model tailored to identify bankruptcy vulnerability, especially in non-manufacturing service and technology enterprises.
-4.  **Piotroski F-Score:** A 9-point binary fundamental accounting framework evaluating year-over-year momentum in profitability, leverage, and operating efficiency.
-5.  **Quality of Earnings (QoE):** Measures the conversion of reported accounting profits (Net Income) into actual liquid cash (CFO) to ensure financial reporting integrity.
+1. **Benford's Law (Transaction Forensics):** Analyzes the leading digit frequency of ledger transactions to identify unnatural patterns or synthetic entries, featuring Mean Absolute Deviation (MAD) scoring and anomalous transaction drill-down.
+2. **Beneish M-Score:** An 8-factor probabilistic model designed to detect earnings manipulation and financial statement distortion.
+3. **Altman Z-Score:** A 4-factor insolvency risk model tailored to identify bankruptcy vulnerability, especially in non-manufacturing service and technology enterprises.
+4. **Piotroski F-Score:** A 9-point binary fundamental accounting framework evaluating year-over-year momentum in profitability, leverage, and operating efficiency.
+5. **Quality of Earnings (QoE):** Measures the conversion of reported accounting profits (Net Income) into actual liquid cash (CFO) to ensure financial reporting integrity.
 
 ## Features
 
@@ -30,13 +33,13 @@ AuditScore evaluates datasets across five key quantitative dimensions:
 
 ## Getting Started
 
-1. **Clone the repository.**
-2. **Install dependencies:** `npm install`
-3. **Run development server:** `npm run dev`
-
----
-*Developed as part of a doctoral research project on financial transparency and automated audit suites.*
+1. Clone the repository: `git clone https://github.com/ferangiz-abdurakhmonova/ForensiScore-BBAPQ.git`
+2. Install dependencies: `npm install`
+3. Run development server: `npm run dev`
 
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) — see the [LICENSE](LICENSE) file for details.
+
+---
+*Developed as part of a doctoral research project on financial transparency and automated audit suites.*

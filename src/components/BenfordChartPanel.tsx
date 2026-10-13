@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { BenfordResult, Transaction } from '../types/audit';
-import { formatCurrency, formatNumber, formatPercent } from '../utils/math';
+import { formatCurrency, formatNumber, formatPercent, extractFirstDigit } from '../utils/math';
 import {
   BarChart3,
   Info,
@@ -56,8 +56,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
 
   // Helper to extract first non-zero leading digit
   const getLeadingDigit = (amount: number): number | null => {
-    const cleaned = String(Math.abs(amount)).replace(/[^1-9]/, '');
-    return cleaned.length > 0 ? parseInt(cleaned.charAt(0), 10) : null;
+    return extractFirstDigit(amount);
   };
 
   // Sum of absolute deltas across digits 1 through 9
@@ -193,6 +192,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
         return {
           ...tx,
           leadingDigit,
+          firstDigit: leadingDigit,
           isAnomalousDigit,
           isRound,
           reason,
@@ -209,8 +209,8 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
       }
       if (txSearch) {
         const query = txSearch.toLowerCase();
-        const matchesId = tx.TransactionID.toLowerCase().includes(query);
-        const matchesDesc = tx.Description.toLowerCase().includes(query);
+        const matchesId = tx.id.toLowerCase().includes(query);
+        const matchesDesc = (tx.Description || '').toLowerCase().includes(query);
         const matchesVendor = (tx.Vendor || '').toLowerCase().includes(query);
         return matchesId || matchesDesc || matchesVendor;
       }
@@ -380,7 +380,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
 
               return (
                 <div
-                  key={stat.digit}
+                  key={`digit-bar-${stat.digit}`}
                   onMouseEnter={() => setActiveDigit(stat.digit)}
                   onMouseLeave={() => setActiveDigit(null)}
                   onClick={() => onDrillDownLedger?.([stat.digit])}
@@ -517,7 +517,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
               const isAnomalous = stat.absDiffFreq >= anomalyThreshold;
               return (
                 <tr
-                  key={stat.digit}
+                  key={`digit-matrix-${stat.digit}`}
                   onClick={() => onDrillDownLedger?.([stat.digit])}
                   className={`cursor-pointer transition-colors ${
                     isAnomalous
@@ -584,7 +584,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
                 </h4>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                Exact source vouchers flagged due to non-conforming leading digits or unnatural round sums.
+                Isolating non-conforming leading digit ({selectedDigitFilter !== 'all' ? selectedDigitFilter : (anomalousDigits.map((d) => d.digit).join(', ') || 'all')}) and excessive round vouchers...
               </p>
             </div>
 
@@ -604,7 +604,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
                 </button>
                 {anomalousDigits.map((d) => (
                   <button
-                    key={d.digit}
+                    key={`anomalous-digit-filter-${d.digit}`}
                     type="button"
                     onClick={() => { setSelectedDigitFilter(d.digit); setTxPage(1); }}
                     className={`px-2 py-1 rounded font-mono font-bold text-[11px] transition-colors ${
@@ -659,32 +659,38 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
                   <th className="py-2 px-3">Date</th>
                   <th className="py-2 px-3">Description / Vendor</th>
                   <th className="py-2 px-3 text-right">Amount</th>
-                  <th className="py-2 px-3 text-center">Leading Digit</th>
+                  <th className="py-2 px-3 text-center">First Digit (d)</th>
+                  <th className="py-2 px-3 text-center">Forensic Indicator</th>
                   <th className="py-2 px-3">Diagnostic Rationale</th>
                   <th className="py-2 px-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-xs">
-                {paginatedFlaggedTxs.map((tx) => (
+                {paginatedFlaggedTxs.map((tx, idx) => (
                   <tr
-                    key={tx.TransactionID}
+                    key={tx.id ? `flagged-tx-${tx.id}-${idx}` : `flagged-tx-${idx}`}
                     className="hover:bg-rose-50/40 dark:hover:bg-rose-950/20 transition-colors"
                   >
                     <td className="py-2 px-3 font-bold text-slate-900 dark:text-white">
-                      {tx.TransactionID}
+                      {tx.id}
                     </td>
                     <td className="py-2 px-3 text-slate-600 dark:text-slate-400">
                       {tx.Date}
                     </td>
                     <td className="py-2 px-3 font-sans text-slate-800 dark:text-slate-200 max-w-[200px] truncate">
-                      {tx.Description}
+                      {tx.Description || tx.Company}
                     </td>
                     <td className="py-2 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">
                       {formatCurrency(tx.Amount)}
                     </td>
+                    <td className="py-2 px-3 text-center tabular-nums">
+                      <span className="inline-block font-bold px-1.5 py-0.5 rounded text-[11px] bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                        {tx.firstDigit ?? '-'}
+                      </span>
+                    </td>
                     <td className="py-2 px-3 text-center">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold text-xs border border-rose-300 dark:border-rose-700">
-                        {tx.leadingDigit}
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold text-[11px] border border-rose-300 dark:border-rose-700">
+                        Non-conforming Leading Digit {tx.firstDigit}
                       </span>
                     </td>
                     <td className="py-2 px-3 font-sans text-[11px] text-rose-700 dark:text-rose-400">

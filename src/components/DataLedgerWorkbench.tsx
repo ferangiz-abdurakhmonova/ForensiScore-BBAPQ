@@ -8,7 +8,7 @@ import {
   parseTransactionsCSV,
   transactionsToCSV,
 } from '../data/syntheticData';
-import { formatCurrency, formatNumber, formatPercent } from '../utils/math';
+import { formatCurrency, formatNumber, formatPercent, extractFirstDigit } from '../utils/math';
 import {
   Upload,
   Download,
@@ -34,6 +34,7 @@ interface DataLedgerWorkbenchProps {
   baselinePeriod: string;
   activePresetId?: string;
   activeDrillDownFilter?: BenfordDrillDownFilter | null;
+  anomalousDigits?: number[];
   defaultTab?: 'financials' | 'transactions';
   onClearDrillDownFilter?: () => void;
   onSetDrillDownFilter?: (filter: BenfordDrillDownFilter | null) => void;
@@ -52,6 +53,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
   baselinePeriod,
   activePresetId,
   activeDrillDownFilter,
+  anomalousDigits,
   defaultTab = 'financials',
   onClearDrillDownFilter,
   onSetDrillDownFilter,
@@ -87,8 +89,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
 
   // Helper to extract first leading digit
   const getLeadingDigit = (amount: number): number | null => {
-    const cleaned = String(Math.abs(amount)).replace(/[^1-9]/, '');
-    return cleaned.length > 0 ? parseInt(cleaned.charAt(0), 10) : null;
+    return extractFirstDigit(amount);
   };
 
   // Helper to check for excessive round amount
@@ -102,10 +103,12 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
     const flags: string[] = [];
     const firstDigit = getLeadingDigit(tx.Amount);
     
-    if (activeDrillDownFilter?.active && firstDigit !== null) {
-      if (activeDrillDownFilter.targetDigits.includes(firstDigit)) {
-        flags.push(`Non-conforming Leading Digit: ${firstDigit}`);
-      }
+    const isTargetDigit = activeDrillDownFilter?.active
+      ? (firstDigit !== null && activeDrillDownFilter.targetDigits.includes(firstDigit))
+      : (firstDigit !== null && (anomalousDigits?.includes(firstDigit) ?? false));
+
+    if (isTargetDigit && firstDigit !== null) {
+      flags.push(`Non-conforming Leading Digit ${firstDigit}`);
     }
 
     if (isExcessiveRoundAmount(tx.Amount)) {
@@ -550,7 +553,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
                   <div>
                     <span className="font-bold">Active Benford Forensic Filter: </span>
                     <span>
-                      Isolating non-conforming leading digits [{activeDrillDownFilter.targetDigits.join(', ')}]
+                      Isolating non-conforming leading digit ({activeDrillDownFilter.targetDigits.join(', ')})
                       {activeDrillDownFilter.flagRoundAmounts ? ' and excessive round vouchers ($500/$1,000 multiples)' : ''}
                       {activeDrillDownFilter.sourceMAD ? ` (Triggered by MAD ${activeDrillDownFilter.sourceMAD.toFixed(4)} >= 0.0150)` : ''}.
                     </span>
@@ -615,7 +618,9 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
                           <td className="py-2.5 px-4 text-center tabular-nums">
                             <span
                               className={`inline-block font-bold px-1.5 py-0.5 rounded text-[11px] ${
-                                activeDrillDownFilter?.targetDigits.includes(firstDigit ?? 0)
+                                (activeDrillDownFilter?.active
+                                  ? activeDrillDownFilter.targetDigits.includes(firstDigit ?? 0)
+                                  : (anomalousDigits?.includes(firstDigit ?? 0) ?? false))
                                   ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
                                   : 'text-emerald-700 dark:text-emerald-400'
                               }`}

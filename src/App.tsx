@@ -424,6 +424,9 @@ export default function App() {
           baselinePeriod={baselinePeriod}
           activePresetId={activePresetId}
           activeDrillDownFilter={drillDownFilter}
+          anomalousDigits={evaluation.benford.digitStats
+            .filter((d) => d.absDiffFreq >= 0.025)
+            .map((d) => d.digit)}
           defaultTab={ledgerDefaultTab}
           onClearDrillDownFilter={handleClearDrillDownFilter}
           onSetDrillDownFilter={setDrillDownFilter}

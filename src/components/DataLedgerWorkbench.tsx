@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { FinancialStatement, Transaction, BenfordDrillDownFilter } from '../types/audit';
+import React, { useState, useRef, useMemo } from 'react';
+import { FinancialStatement, Transaction, BenfordDrillDownFilter, BenfordResult } from '../types/audit';
 import {
   PRESET_SCENARIOS,
   PresetScenario,
@@ -9,6 +9,7 @@ import {
   transactionsToCSV,
 } from '../data/syntheticData';
 import { formatCurrency, formatNumber, formatPercent, extractFirstDigit } from '../utils/math';
+import { evaluateBenford } from '../utils/auditCalculations';
 import {
   Upload,
   Download,
@@ -35,6 +36,7 @@ interface DataLedgerWorkbenchProps {
   activePresetId?: string;
   activeDrillDownFilter?: BenfordDrillDownFilter | null;
   anomalousDigits?: number[];
+  benfordResult?: BenfordResult;
   defaultTab?: 'financials' | 'transactions';
   onClearDrillDownFilter?: () => void;
   onSetDrillDownFilter?: (filter: BenfordDrillDownFilter | null) => void;
@@ -42,6 +44,8 @@ interface DataLedgerWorkbenchProps {
   onUpdateFinancialStatements: (statements: FinancialStatement[]) => void;
   onLoadPreset: (preset: PresetScenario) => void;
   onGenerateSynthetic: () => void;
+  customCompanyName?: string;
+  onCustomCompanyNameChange?: (name: string) => void;
 }
 
 export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
@@ -54,6 +58,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
   activePresetId,
   activeDrillDownFilter,
   anomalousDigits,
+  benfordResult,
   defaultTab = 'financials',
   onClearDrillDownFilter,
   onSetDrillDownFilter,
@@ -61,6 +66,8 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
   onUpdateFinancialStatements,
   onLoadPreset,
   onGenerateSynthetic,
+  customCompanyName = 'Custom Company',
+  onCustomCompanyNameChange,
 }) => {
   const [activeTab, setActiveTab] = useState<'financials' | 'transactions'>(defaultTab);
   const [txSearch, setTxSearch] = useState('');
@@ -98,16 +105,31 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
     return abs >= 100 && (abs % 500 === 0 || abs % 1000 === 0);
   };
 
+  // Effective Benford analysis for the active transactions population
+  const effectiveBenford = useMemo(() => {
+    if (benfordResult) return benfordResult;
+    return evaluateBenford(transactions);
+  }, [benfordResult, transactions]);
+
+  // Overall MAD risk threshold (0.0150 per Nigrini audit standard)
+  const isCompanyMadAtRisk = effectiveBenford.mad >= 0.0150;
+
   // Identify why a transaction is flagged
   const getTransactionFlags = (tx: Transaction): string[] => {
+    // If the overall company MAD is in the green/acceptable zone, all transactions are conforming
+    if (!isCompanyMadAtRisk) {
+      return [];
+    }
+
     const flags: string[] = [];
     const firstDigit = getLeadingDigit(tx.Amount);
     
-    const isTargetDigit = activeDrillDownFilter?.active
-      ? (firstDigit !== null && activeDrillDownFilter.targetDigits.includes(firstDigit))
-      : (firstDigit !== null && (anomalousDigits?.includes(firstDigit) ?? false));
+    // Condition 1: Digit frequency exceeds expected Benford frequency (diffFreq > 0)
+    const stat = firstDigit !== null ? effectiveBenford.digitStats.find((s) => s.digit === firstDigit) : null;
+    const exceedsExpected = stat ? stat.diffFreq > 0 : false;
 
-    if (isTargetDigit && firstDigit !== null) {
+    // Condition 2: Overall company MAD is in risk zone (isCompanyMadAtRisk === true)
+    if (firstDigit !== null && exceedsExpected) {
       flags.push(`Non-conforming Leading Digit ${firstDigit}`);
     }
 
@@ -285,51 +307,88 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 relative z-30">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 relative z-30">
           {PRESET_SCENARIOS.map((preset) => {
             const isCurrent = activePresetId === preset.id;
+            const isCustom = preset.id === 'custom';
+            const displayName = isCustom ? (customCompanyName || 'Custom Company') : preset.name;
+            const displayCompany = isCustom ? (customCompanyName || 'Custom Company') : preset.company;
+
             return (
-              <button
+              <div
                 key={preset.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   onLoadPreset(preset);
                   setUploadSuccess(
-                    `Applied preset scenario "${preset.name}". All 5 forensic engines recalculated.`
+                    isCustom
+                      ? `Activated preset "${displayName}". Upload CSV datasets or edit company name.`
+                      : `Applied preset scenario "${preset.name}". All 5 forensic engines recalculated.`
                   );
                 }}
-                className={`text-left p-3.5 rounded-xl border transition-all relative overflow-hidden group cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/40 select-none ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    onLoadPreset(preset);
+                  }
+                }}
+                className={`text-left p-3.5 rounded-xl border transition-all relative overflow-hidden group cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/40 select-none flex flex-col justify-between ${
                   isCurrent
                     ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-500/80 shadow-sm ring-1 ring-emerald-500'
                     : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-400/60 dark:hover:border-emerald-500/40 hover:shadow-sm'
                 }`}
               >
-                <div className="flex items-start justify-between gap-2 pointer-events-none">
-                  <div className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">
-                    {preset.name}
+                <div>
+                  <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                    {isCustom && isCurrent ? (
+                      <div className="flex-1 mr-1" onClick={(e) => e.stopPropagation()}>
+                        <label
+                          htmlFor="custom-company-name-input"
+                          className="block text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1"
+                        >
+                          Company Name:
+                        </label>
+                        <input
+                          id="custom-company-name-input"
+                          type="text"
+                          value={customCompanyName}
+                          onChange={(e) => onCustomCompanyNameChange?.(e.target.value)}
+                          placeholder="Custom Company"
+                          className="w-full px-2 py-1 text-xs font-bold rounded-md border border-emerald-500 dark:border-emerald-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <div className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">
+                        {displayName}
+                      </div>
+                    )}
+
+                    {isCurrent ? (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-600 text-white shrink-0 shadow-xs">
+                        ACTIVE
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
+                        {preset.shortTag}
+                      </span>
+                    )}
                   </div>
-                  {isCurrent ? (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-600 text-white shrink-0 shadow-xs">
-                      ACTIVE
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
-                      {preset.shortTag}
-                    </span>
-                  )}
+
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                    {preset.description}
+                  </p>
                 </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed pointer-events-none">
-                  {preset.description}
-                </p>
-                <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pointer-events-none">
-                  <span className="font-mono text-[9px] font-semibold text-slate-600 dark:text-slate-300">
-                    {preset.company}
+
+                <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                  <span className="font-mono text-[9px] font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[110px]" title={displayCompany}>
+                    {displayCompany}
                   </span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-medium group-hover:underline">
-                    Load &rarr;
+                    {isCurrent ? (isCustom ? 'Edit' : 'Active') : 'Load →'}
                   </span>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -618,9 +677,7 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
                           <td className="py-2.5 px-4 text-center tabular-nums">
                             <span
                               className={`inline-block font-bold px-1.5 py-0.5 rounded text-[11px] ${
-                                (activeDrillDownFilter?.active
-                                  ? activeDrillDownFilter.targetDigits.includes(firstDigit ?? 0)
-                                  : (anomalousDigits?.includes(firstDigit ?? 0) ?? false))
+                                isCompanyMadAtRisk && firstDigit !== null && (effectiveBenford.digitStats.find((s) => s.digit === firstDigit)?.diffFreq ?? 0) > 0
                                   ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
                                   : 'text-emerald-700 dark:text-emerald-400'
                               }`}
@@ -640,14 +697,15 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
                                         : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-800'
                                     }`}
                                   >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                    <span className={`w-1.5 h-1.5 rounded-full ${flag.includes('Non-conforming') ? 'bg-rose-500' : 'bg-amber-500'}`} />
                                     <span>{flag}</span>
                                   </span>
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                                Conforming
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                <span>Conforming</span>
                               </span>
                             )}
                           </td>

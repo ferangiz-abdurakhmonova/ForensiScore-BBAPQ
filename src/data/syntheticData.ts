@@ -486,6 +486,21 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     fin2023: { ...ACME_FINANCIALS_2023, Company: 'Starlight Trade' },
     fin2024: { ...ACME_FINANCIALS_2024, Company: 'Starlight Trade' },
   },
+  {
+    id: 'custom',
+    name: 'Custom Company',
+    shortTag: 'Custom Co',
+    description: 'Upload your own datasets (Transactions & Financials CSV) and customize the company name.',
+    company: 'Custom Company',
+    expectedOutcome: 'CUSTOM AUDIT (Based on your uploaded CSV datasets)',
+    transactions: generateBenfordTransactions('Custom Company', 250, 'benford'),
+    financialStatements: [
+      { ...ACME_FINANCIALS_2023, Company: 'Custom Company' },
+      { ...ACME_FINANCIALS_2024, Company: 'Custom Company' },
+    ],
+    fin2023: { ...ACME_FINANCIALS_2023, Company: 'Custom Company' },
+    fin2024: { ...ACME_FINANCIALS_2024, Company: 'Custom Company' },
+  },
 ];
 
 /**

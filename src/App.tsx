@@ -42,6 +42,16 @@ export default function App() {
   const [targetPeriod, setTargetPeriod] = useState<string>('2024');
   const [baselinePeriod, setBaselinePeriod] = useState<string>('2023');
 
+  // Custom company & uploaded datasets state
+  const [customCompanyName, setCustomCompanyName] = useState<string>('Custom Company');
+  const [customTransactionData, setCustomTransactionData] = useState<Transaction[]>(() =>
+    generateBenfordTransactions('Custom Company', 250, 'benford')
+  );
+  const [customFinancialData, setCustomFinancialData] = useState<FinancialStatement[]>(() => [
+    { ...ACME_FINANCIALS_2023, Company: 'Custom Company' },
+    { ...ACME_FINANCIALS_2024, Company: 'Custom Company' },
+  ]);
+
   // UI state
   const [activePresetId, setActivePresetId] = useState<string>('acme_healthy');
   const [activeMethodTab, setActiveMethodTab] = useState<string>('radar');
@@ -53,38 +63,54 @@ export default function App() {
   const [drillDownFilter, setDrillDownFilter] = useState<BenfordDrillDownFilter | null>(null);
   const [ledgerDefaultTab, setLedgerDefaultTab] = useState<'financials' | 'transactions'>('financials');
 
+  // Synchronized active statements and transactions
+  const activeFinancialStatements = useMemo(() => {
+    if (activePresetId === 'custom') {
+      return financialStatements.map((s) => ({ ...s, Company: customCompanyName || 'Custom Company' }));
+    }
+    return financialStatements;
+  }, [financialStatements, activePresetId, customCompanyName]);
+
+  const activeTransactions = useMemo(() => {
+    if (activePresetId === 'custom') {
+      return transactions.map((t) => ({ ...t, Company: customCompanyName || 'Custom Company' }));
+    }
+    return transactions;
+  }, [transactions, activePresetId, customCompanyName]);
+
   // Available unique periods sorted chronologically
   const availablePeriods = useMemo(() => {
-    const periods = Array.from(new Set(financialStatements.map((s) => s.Period)));
+    const periods = Array.from(new Set(activeFinancialStatements.map((s) => s.Period)));
     return periods.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  }, [financialStatements]);
+  }, [activeFinancialStatements]);
 
   // Target (t) and Baseline (t-baseline) financial statements
   const currentFin = useMemo(() => {
     return (
-      financialStatements.find((s) => s.Period === targetPeriod) ||
-      financialStatements[financialStatements.length - 1]
+      activeFinancialStatements.find((s) => s.Period === targetPeriod) ||
+      activeFinancialStatements[activeFinancialStatements.length - 1]
     );
-  }, [financialStatements, targetPeriod]);
+  }, [activeFinancialStatements, targetPeriod]);
 
   const priorFin = useMemo(() => {
     return (
-      financialStatements.find((s) => s.Period === baselinePeriod) ||
-      financialStatements[Math.max(0, financialStatements.length - 2)]
+      activeFinancialStatements.find((s) => s.Period === baselinePeriod) ||
+      activeFinancialStatements[Math.max(0, activeFinancialStatements.length - 2)]
     );
-  }, [financialStatements, baselinePeriod]);
+  }, [activeFinancialStatements, baselinePeriod]);
 
   // Compute live evaluation across the 5 methodologies dynamically based on target and baseline
   const evaluation = useMemo(() => {
+    const resolvedCompany = activePresetId === 'custom' ? (customCompanyName || 'Custom Company') : currentFin.Company;
     return synthesizeAuditEvaluation(
-      currentFin.Company,
+      resolvedCompany,
       currentFin.Period,
       priorFin.Period,
-      transactions,
+      activeTransactions,
       currentFin,
       priorFin
     );
-  }, [transactions, currentFin, priorFin]);
+  }, [activeTransactions, currentFin, priorFin, activePresetId, customCompanyName]);
 
   // Handler for "Generate Synthetic Data"
   const handleGenerateSynthetic = useCallback(() => {
@@ -100,41 +126,112 @@ export default function App() {
     }, 250);
   }, []);
 
-  const handleLoadPreset = useCallback((preset: PresetScenario) => {
-    setActivePresetId(preset.id);
-    const txs =
-      preset.id === 'starlight_benford'
-        ? generateBenfordTransactions('Starlight Trade', 280, 'anomalous')
-        : preset.id === 'apex_manipulation'
-        ? generateBenfordTransactions('Apex Dynamics', 200, 'benford')
-        : preset.id === 'solv_distress'
-        ? generateBenfordTransactions('Solvent Dynamics', 180, 'benford')
-        : generateBenfordTransactions('ACME Inc', 250, 'benford');
+  const handleLoadPreset = useCallback(
+    (preset: PresetScenario) => {
+      setActivePresetId(preset.id);
+      if (preset.id === 'custom') {
+        const txs =
+          customTransactionData.length > 0
+            ? customTransactionData.map((t) => ({ ...t, Company: customCompanyName || 'Custom Company' }))
+            : generateBenfordTransactions(customCompanyName || 'Custom Company', 250, 'benford');
+        const statements =
+          customFinancialData.length >= 2
+            ? customFinancialData.map((s) => ({ ...s, Company: customCompanyName || 'Custom Company' }))
+            : [
+                { ...ACME_FINANCIALS_2023, Company: customCompanyName || 'Custom Company' },
+                { ...ACME_FINANCIALS_2024, Company: customCompanyName || 'Custom Company' },
+              ];
 
-    setTransactions(txs);
-    const statements =
-      preset.financialStatements && preset.financialStatements.length > 0
-        ? [...preset.financialStatements]
-        : [preset.fin2023, preset.fin2024];
-    setFinancialStatements(statements);
-    setTargetPeriod(preset.fin2024.Period);
-    setBaselinePeriod(preset.fin2023.Period);
-  }, []);
+        setTransactions(txs);
+        setFinancialStatements(statements);
+        const sorted = [...statements].sort((a, b) =>
+          a.Period.localeCompare(b.Period, undefined, { numeric: true })
+        );
+        setTargetPeriod(sorted[sorted.length - 1].Period);
+        setBaselinePeriod(sorted[sorted.length - 2]?.Period || sorted[0].Period);
+        return;
+      }
 
-  const handleUpdateFinancialStatements = useCallback((statements: FinancialStatement[]) => {
-    setActivePresetId('custom');
-    setFinancialStatements(statements);
-    if (statements.length >= 2) {
-      const sorted = [...statements].sort((a, b) =>
-        a.Period.localeCompare(b.Period, undefined, { numeric: true })
-      );
-      setTargetPeriod(sorted[sorted.length - 1].Period);
-      setBaselinePeriod(sorted[sorted.length - 2].Period);
-    } else if (statements.length === 1) {
-      setTargetPeriod(statements[0].Period);
-      setBaselinePeriod(statements[0].Period);
-    }
-  }, []);
+      const txs =
+        preset.id === 'starlight_benford'
+          ? generateBenfordTransactions('Starlight Trade', 280, 'anomalous')
+          : preset.id === 'apex_manipulation'
+          ? generateBenfordTransactions('Apex Dynamics', 200, 'benford')
+          : preset.id === 'solv_distress'
+          ? generateBenfordTransactions('Solvent Dynamics', 180, 'benford')
+          : generateBenfordTransactions('ACME Inc', 250, 'benford');
+
+      setTransactions(txs);
+      const statements =
+        preset.financialStatements && preset.financialStatements.length > 0
+          ? [...preset.financialStatements]
+          : [preset.fin2023, preset.fin2024];
+      setFinancialStatements(statements);
+      setTargetPeriod(preset.fin2024.Period);
+      setBaselinePeriod(preset.fin2023.Period);
+    },
+    [customTransactionData, customFinancialData, customCompanyName]
+  );
+
+  const handleUpdateTransactions = useCallback(
+    (txs: Transaction[]) => {
+      setActivePresetId('custom');
+      const updated = txs.map((t) => ({
+        ...t,
+        Company: t.Company && t.Company !== 'Uploaded Co' ? t.Company : customCompanyName || 'Custom Company',
+      }));
+      setCustomTransactionData(updated);
+      setTransactions(updated);
+    },
+    [customCompanyName]
+  );
+
+  const handleUpdateFinancialStatements = useCallback(
+    (statements: FinancialStatement[]) => {
+      setActivePresetId('custom');
+      const detectedCompany = statements[0]?.Company;
+      let effectiveCompany = customCompanyName;
+      if (
+        detectedCompany &&
+        detectedCompany !== 'Uploaded Entity' &&
+        detectedCompany !== 'Uploaded Co' &&
+        detectedCompany.trim()
+      ) {
+        effectiveCompany = detectedCompany.trim();
+        setCustomCompanyName(effectiveCompany);
+      }
+      const updated = statements.map((s) => ({
+        ...s,
+        Company: effectiveCompany,
+      }));
+      setCustomFinancialData(updated);
+      setFinancialStatements(updated);
+      if (updated.length >= 2) {
+        const sorted = [...updated].sort((a, b) =>
+          a.Period.localeCompare(b.Period, undefined, { numeric: true })
+        );
+        setTargetPeriod(sorted[sorted.length - 1].Period);
+        setBaselinePeriod(sorted[sorted.length - 2].Period);
+      } else if (updated.length === 1) {
+        setTargetPeriod(updated[0].Period);
+        setBaselinePeriod(updated[0].Period);
+      }
+    },
+    [customCompanyName]
+  );
+
+  const handleCustomCompanyNameChange = useCallback(
+    (name: string) => {
+      setCustomCompanyName(name);
+      if (activePresetId === 'custom') {
+        setTransactions((prev) => prev.map((t) => ({ ...t, Company: name })));
+        setFinancialStatements((prev) => prev.map((s) => ({ ...s, Company: name })));
+        setCustomTransactionData((prev) => prev.map((t) => ({ ...t, Company: name })));
+        setCustomFinancialData((prev) => prev.map((s) => ({ ...s, Company: name })));
+      }
+    },
+    [activePresetId]
+  );
 
   const handleSelectMethod = (methodId: string) => {
     setActiveMethodTab(methodId);
@@ -368,7 +465,7 @@ export default function App() {
             {activeMethodTab === 'benford' && (
               <BenfordChartPanel
                 result={evaluation.benford}
-                transactions={transactions}
+                transactions={activeTransactions}
                 onDrillDownLedger={handleDrillDownBenford}
                 onJumpToLedger={() => handleJumpToLedger('transactions')}
               />
@@ -416,21 +513,26 @@ export default function App() {
 
         {/* Section 4: Data Ledger & CSV Workbench */}
         <DataLedgerWorkbench
-          transactions={transactions}
-          financialStatements={financialStatements}
+          transactions={activeTransactions}
+          financialStatements={activeFinancialStatements}
           currentFin={currentFin}
           priorFin={priorFin}
           targetPeriod={targetPeriod}
           baselinePeriod={baselinePeriod}
           activePresetId={activePresetId}
           activeDrillDownFilter={drillDownFilter}
-          anomalousDigits={evaluation.benford.digitStats
-            .filter((d) => d.absDiffFreq >= 0.025)
-            .map((d) => d.digit)}
+          anomalousDigits={
+            evaluation.benford.mad >= 0.015
+              ? evaluation.benford.digitStats
+                  .filter((d) => d.diffFreq > 0)
+                  .map((d) => d.digit)
+              : []
+          }
+          benfordResult={evaluation.benford}
           defaultTab={ledgerDefaultTab}
           onClearDrillDownFilter={handleClearDrillDownFilter}
           onSetDrillDownFilter={setDrillDownFilter}
-          onUpdateTransactions={setTransactions}
+          onUpdateTransactions={handleUpdateTransactions}
           onUpdateFinancialStatements={handleUpdateFinancialStatements}
           onLoadPreset={(preset) => {
             handleLoadPreset(preset);
@@ -443,6 +545,8 @@ export default function App() {
             setDrillDownFilter(null);
             setLedgerDefaultTab('financials');
           }}
+          customCompanyName={customCompanyName}
+          onCustomCompanyNameChange={handleCustomCompanyNameChange}
         />
       </main>
 
@@ -455,7 +559,7 @@ export default function App() {
             <span>Integrated 5D Evaluation: Benford's Law (MAD) · Beneish M-Score · Altman Z-Score · Piotroski F-Score · Quality of Earnings (QoE)</span>
           </div>
           
-          {/* Блок с лицензией, GitHub и Feedback */}
+          {/* License, GitHub, and Feedback */}
           <div className="flex items-center gap-3 text-[11px] text-slate-500">
             <span>Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer" className="underline hover:text-emerald-500">AGPLv3</a></span>
             <span aria-hidden="true">·</span>

@@ -45,10 +45,14 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
     ...result.digitStats.map((d) => Math.max(d.observedFreq, d.expectedFreq))
   );
 
-  // Identify anomalous digits based on current threshold
+  // Overall company MAD risk threshold (0.0150 per Nigrini audit standard)
+  const isMadAtRisk = result.mad >= 0.0150;
+
+  // Identify anomalous digits based on current threshold: must exceed expected frequency and company MAD must be at risk
   const anomalousDigits = useMemo(() => {
-    return result.digitStats.filter((d) => d.absDiffFreq >= anomalyThreshold);
-  }, [result.digitStats, anomalyThreshold]);
+    if (!isMadAtRisk) return [];
+    return result.digitStats.filter((d) => d.diffFreq > 0 && d.absDiffFreq >= anomalyThreshold);
+  }, [result.digitStats, anomalyThreshold, isMadAtRisk]);
 
   const anomalousDigitSet = useMemo(() => {
     return new Set(anomalousDigits.map((d) => d.digit));
@@ -172,17 +176,21 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
 
   // Extract anomalous / flagged transactions
   const flaggedTransactions = useMemo(() => {
-    if (!transactions || transactions.length === 0) return [];
+    // If overall MAD is in the green/acceptable zone, no transactions are flagged as non-conforming
+    if (!transactions || transactions.length === 0 || !isMadAtRisk) return [];
     
     return transactions
       .map((tx) => {
         const leadingDigit = getLeadingDigit(tx.Amount);
-        const isAnomalousDigit = leadingDigit !== null && anomalousDigitSet.has(leadingDigit);
+        const stat = leadingDigit !== null ? result.digitStats.find((s) => s.digit === leadingDigit) : null;
+        // Condition 1: Digit frequency exceeds expected Benford frequency (diffFreq > 0)
+        const exceedsExpected = stat ? stat.diffFreq > 0 : false;
+        // Condition 2: Overall company MAD is at risk (isMadAtRisk === true, checked above)
+        const isAnomalousDigit = exceedsExpected && leadingDigit !== null && anomalousDigitSet.has(leadingDigit);
         const isRound = Math.abs(tx.Amount) >= 500 && Math.abs(tx.Amount) % 500 === 0;
         
         let reason = '';
         if (isAnomalousDigit && leadingDigit !== null) {
-          const stat = result.digitStats.find((s) => s.digit === leadingDigit);
           const spread = stat ? (stat.diffFreq > 0 ? `+${formatPercent(stat.diffFreq, 1)}` : formatPercent(stat.diffFreq, 1)) : '';
           reason = `Non-conforming Leading Digit ${leadingDigit} (${spread} abnormal deviation)`;
         } else if (isRound) {
@@ -199,7 +207,7 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
         };
       })
       .filter((tx) => tx.isAnomalousDigit || tx.isRound);
-  }, [transactions, anomalousDigitSet, result.digitStats]);
+  }, [transactions, isMadAtRisk, anomalousDigitSet, result.digitStats]);
 
   // Filtered transactions for the sample table
   const filteredFlaggedTxs = useMemo(() => {
@@ -742,6 +750,35 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Conformity State Banner when company MAD is in green zone */}
+      {!isMadAtRisk && (
+        <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 overflow-hidden bg-white dark:bg-slate-900/80 shadow-sm transition-colors p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Natural Benford Distribution Verified (Conforming)
+                </h4>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                Overall company MAD score ({result.mad.toFixed(4)}) is within the acceptable threshold (&lt; 0.0150). All transactions conform to expected distribution benchmarks with zero non-conforming flags.
+              </p>
+            </div>
+            {onJumpToLedger && (
+              <button
+                type="button"
+                onClick={onJumpToLedger}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shrink-0"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Open Full Ledger &rarr;</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

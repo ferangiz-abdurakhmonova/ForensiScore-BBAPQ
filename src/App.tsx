@@ -18,9 +18,11 @@ import { BeneishPanel } from './components/BeneishPanel';
 import { AltmanPanel } from './components/AltmanPanel';
 import { PiotroskiPanel } from './components/PiotroskiPanel';
 import { QoEPanel } from './components/QoEPanel';
+import { ForensicTrendPanel } from './components/ForensicTrendPanel';
 import { ForensicRadarChart } from './components/ForensicRadarChart';
 import { DataLedgerWorkbench } from './components/DataLedgerWorkbench';
 import { ExportModal } from './components/ExportModal';
+import { FeedbackModal } from './components/FeedbackModal';
 import {
   BarChart3,
   Binary,
@@ -45,6 +47,7 @@ export default function App() {
   const [activePresetId, setActivePresetId] = useState<string>('acme_healthy');
   const [activeMethodTab, setActiveMethodTab] = useState<string>('radar');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Feature 1: Interactive Drill-Down State for Benford's Law Anomaly
@@ -83,25 +86,6 @@ export default function App() {
       priorFin
     );
   }, [transactions, currentFin, priorFin]);
-
-  const allEvaluations = useMemo(() => {
-    return availablePeriods.map((period) => {
-      const fin = financialStatements.find((s) => s.Period === period)!;
-      // Use the period before it as prior (or itself if not available)
-      const priorPeriodIndex = availablePeriods.indexOf(period) - 1;
-      const priorFin = financialStatements.find(
-        (s) => s.Period === (priorPeriodIndex >= 0 ? availablePeriods[priorPeriodIndex] : period)
-      )!;
-      return synthesizeAuditEvaluation(
-        fin.Company,
-        fin.Period,
-        priorFin.Period,
-        transactions,
-        fin,
-        priorFin
-      );
-    });
-  }, [transactions, financialStatements, availablePeriods]);
 
   // Handler for "Generate Synthetic Data"
   const handleGenerateSynthetic = useCallback(() => {
@@ -277,6 +261,14 @@ export default function App() {
       badgeColor: evaluation.qoe.badgeColor,
       summaryVal: `${evaluation.qoe.qoeRatio.toFixed(2)}x`,
     },
+    {
+      id: 'trends',
+      name: 'Historical Trends',
+      tag: 'Timeline View',
+      icon: Layers,
+      badgeColor: 'green',
+      summaryVal: 'View History',
+    },
   ];
 
   return (
@@ -428,6 +420,9 @@ export default function App() {
                 onJumpToLedger={() => handleJumpToLedger('financials')}
               />
             )}
+            {activeMethodTab === 'trends' && (
+              <ForensicTrendPanel financialStatements={financialStatements} />
+            )}
           </div>
         </section>
 
@@ -464,20 +459,18 @@ export default function App() {
       <footer className="w-full border-t border-slate-200 dark:border-slate-900 bg-white dark:bg-slate-950 mt-16 py-6 text-xs text-slate-500 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700 dark:text-slate-400">AuditScore BBAPQ</span>
+            <span className="font-bold text-slate-700 dark:text-slate-400">ForensiScore BBAPQ</span>
             <span aria-hidden="true">·</span>
-            <span>Mathematical Financial Forensics & Insolvency Platform</span>
+            <span>Integrated 5D Evaluation: Benford's Law (MAD) · Beneish M-Score · Altman Z-Score · Piotroski F-Score · Quality of Earnings (QoE)</span>
           </div>
-          <div className="flex items-center gap-4 text-[11px] text-slate-500">
-            <span>Benford&apos;s Law (MAD & χ²)</span>
+          
+          {/* Блок с лицензией, GitHub и Feedback */}
+          <div className="flex items-center gap-3 text-[11px] text-slate-500">
+            <span>Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer" className="underline hover:text-emerald-500">AGPLv3</a></span>
             <span aria-hidden="true">·</span>
-            <span>Beneish M-Score (8-Factor)</span>
+            <a href="https://github.com/ferangiz-abdurakhmonova/AuditScore-5.1" target="_blank" rel="noreferrer" className="underline hover:text-emerald-500">Source Code</a>
             <span aria-hidden="true">·</span>
-            <span>Altman Z-Score (Non-Mfg)</span>
-            <span aria-hidden="true">·</span>
-            <span>Piotroski F-Score</span>
-            <span aria-hidden="true">·</span>
-            <span>Quality of Earnings</span>
+            <button onClick={() => setIsFeedbackModalOpen(true)} className="underline hover:text-rose-500 font-semibold cursor-pointer">Report Issue</button>
           </div>
         </div>
       </footer>
@@ -487,6 +480,12 @@ export default function App() {
         evaluation={evaluation}
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
+      />
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
       />
     </div>
   );

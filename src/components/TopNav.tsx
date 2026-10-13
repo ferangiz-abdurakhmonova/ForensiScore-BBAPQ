@@ -26,11 +26,12 @@ export const TopNav: React.FC<TopNavProps> = ({
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
-              AuditScore
+            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              ForensiScore BBAPQ
+              <span className="text-[9px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 px-1.5 py-0.5 rounded">v0.1.0-beta · Public Prototype</span>
             </span>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-              Forensic Accounting & Insolvency Suite
+              Benford's Law (MAD) · Beneish M-Score · Altman Z-Score · Piotroski F-Score · Quality of Earnings (QoE)
             </span>
           </div>
         </div>
@@ -95,6 +96,15 @@ export const TopNav: React.FC<TopNavProps> = ({
             <Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
             <span>Export Results</span>
           </button>
+          
+          <a 
+            href="https://github.com/ferangiz-abdurakhmonova/AuditScore-5.1/issues/new?title=[Anomaly/Bug]+" 
+            target="_blank" 
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+          >
+            Feedback
+          </a>
         </div>
       </div>
     </header>

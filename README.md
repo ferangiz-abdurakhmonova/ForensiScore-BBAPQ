@@ -31,9 +31,9 @@ ForensiScore BBAPQ evaluates datasets across five key quantitative dimensions:
 - **Forensic Engine:** Custom TypeScript analytical modules
 - **Package Manager:** Bun / npm
 
-## Getting Started
+### Live Interactive Demo
+You can explore the live prototype directly in your browser without any installation or account setup:
+**[Launch ForensiScore BBAPQ](https://forensi-score-bbapq-4tok.vercel.app/)**
 
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/ferangiz-abdurakhmonova/ForensiScore-BBAPQ.git](https://github.com/ferangiz-abdurakhmonova/ForensiScore-BBAPQ.git)
-   cd ForensiScore-BBAPQ
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

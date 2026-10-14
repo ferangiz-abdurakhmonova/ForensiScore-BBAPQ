@@ -40,6 +40,13 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
   const [txPage, setTxPage] = useState(1);
   const PAGE_SIZE = 8;
 
+  // Reset local state when dataset or evaluation results change
+  React.useEffect(() => {
+    setActiveDigit(null);
+    setSelectedDigitFilter('all');
+    setTxPage(1);
+  }, [result, transactions]);
+
   // Maximum frequency for scaling SVG/HTML bars (digit 1 is ~30.1%, so max ~35-45%)
   const maxFreq = Math.max(
     0.35,

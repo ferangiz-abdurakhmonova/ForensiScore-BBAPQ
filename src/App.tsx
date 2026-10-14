@@ -61,6 +61,11 @@ export default function App() {
   const [drillDownFilter, setDrillDownFilter] = useState<BenfordDrillDownFilter | null>(null);
   const [ledgerDefaultTab, setLedgerDefaultTab] = useState<'financials' | 'transactions'>('financials');
 
+  // Reset active Benford drill-down filter whenever active company dataset or preset changes
+  React.useEffect(() => {
+    setDrillDownFilter(null);
+  }, [activePresetId, transactions, customCompanyName]);
+
   // Synchronized active statements and transactions
   const activeFinancialStatements = useMemo<FinancialStatement[]>(() => {
     if (activePresetId === 'custom') {

@@ -136,17 +136,24 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
   // Overall MAD risk threshold (0.0150 per Nigrini audit standard)
   const isCompanyMadAtRisk = effectiveBenford.mad >= 0.0150;
 
-  // Identify why an individual transaction is flagged
-  const getTransactionFlags = (tx: Transaction): string[] => {
+  // Strictly determine forensic indicators for a transaction
+  const getForensicIndicator = (tx: Transaction): string[] => {
     const flags: string[] = [];
+    const firstDigit = getLeadingDigit(tx.Amount);
 
-    // Individual transaction anomaly check: excessive round amount voucher ($500 / $1,000 multiples)
-    if (isExcessiveRoundAmount(tx.Amount)) {
-      flags.push('Round Voucher Anomaly');
+    // RED badge "Non-conforming Leading Digit {d}" appears EXCLUSIVELY when activeBenfordFilter exists and digit strictly matches
+    if (
+      activeDrillDownFilter?.active &&
+      firstDigit !== null &&
+      activeDrillDownFilter.targetDigits.includes(firstDigit)
+    ) {
+      flags.push(`Non-conforming Leading Digit ${firstDigit}`);
     }
 
     return flags;
   };
+
+  const getTransactionFlags = getForensicIndicator;
 
   // Filter pipeline for transactions
   const PAGE_SIZE = 12;

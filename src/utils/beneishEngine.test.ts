@@ -61,7 +61,33 @@ describe('Beneish M-Score Engine Calculations', () => {
     expect(result.variables.DEPI.value).toBeCloseTo(1.250, 3);
     expect(result.variables.SGAI.value).toBeCloseTo(0.889, 3);
     expect(result.variables.LVGI.value).toBeCloseTo(1.389, 3);
+    expect(result.variables.LVGI.flagged).toBe(true);
     expect(result.variables.TATA.value).toBeCloseTo(0.167, 3);
     expect(result.mScore).toBeCloseTo(0.130, 3);
+  });
+
+  it('correctly flags LVGI when value is 1.131 (> 1.10 threshold)', () => {
+    const priorYear: FinancialStatement = {
+      Company: 'Test Co',
+      Period: 't-1',
+      Sales: 100000, COGS: 60000, Receivables: 10000, CurrentAssets: 40000,
+      CurrentLiabilities: 20000, Inventory: 10000, PPE: 50000, Depreciation: 5000,
+      TotalAssets: 100000, TotalLiabilities: 50000, SGA: 15000, EBIT: 15000,
+      NetIncome: 10000, CFO: 10000, LongTermDebt: 30000, SharesOutstanding: 100000,
+      RetainedEarnings: 20000,
+    };
+
+    // Increase liabilities to assets ratio by factor ~1.131
+    // TotalLiab_t / TA_t = 0.5655 vs 0.50 => LVGI = 1.131
+    const currentYear: FinancialStatement = {
+      ...priorYear,
+      Period: 't',
+      TotalLiabilities: 56550,
+      TotalAssets: 100000,
+    };
+
+    const result = evaluateBeneish(currentYear, priorYear);
+    expect(result.variables.LVGI.value).toBeCloseTo(1.131, 3);
+    expect(result.variables.LVGI.flagged).toBe(true);
   });
 });

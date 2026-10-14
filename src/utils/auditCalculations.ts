@@ -331,8 +331,8 @@ export function evaluateBeneish(current: FinancialStatement, prior: FinancialSta
         contribution: -0.327 * lvgi,
         benchmark: 'Norm <= 1.00; > 1.10 reflects increased gearing/debt load',
         formula: '(TotalLiabilities_t / TA_t) / (TotalLiabilities_{t-1} / TA_{t-1})',
-        interpretation: lvgi > 1.15 ? 'Debt load increased relative to assets.' : 'Leverage ratio stable or deleveraging.',
-        flagged: lvgi > 1.15,
+        interpretation: lvgi > 1.10 ? 'Debt load increased relative to assets.' : 'Leverage ratio stable or deleveraging.',
+        flagged: lvgi > 1.10,
       },
     },
   };

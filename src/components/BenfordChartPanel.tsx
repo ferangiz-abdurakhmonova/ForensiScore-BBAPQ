@@ -719,13 +719,8 @@ export const BenfordChartPanel: React.FC<BenfordChartPanelProps> = ({
                           </span>
                         )}
                         {tx.isRound && (
-                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold text-[11px] border border-rose-300 dark:border-rose-700">
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-bold text-[11px] border border-amber-300 dark:border-amber-700">
                             Round Voucher Anomaly
-                          </span>
-                        )}
-                        {!tx.isAnomalousDigit && !tx.isRound && (
-                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold text-[11px] border border-rose-300 dark:border-rose-700">
-                            Non-conforming Leading Digit {tx.firstDigit}
                           </span>
                         )}
                       </div>

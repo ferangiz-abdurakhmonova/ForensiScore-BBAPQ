@@ -136,25 +136,11 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
   // Overall MAD risk threshold (0.0150 per Nigrini audit standard)
   const isCompanyMadAtRisk = effectiveBenford.mad >= 0.0150;
 
-  // Identify why a transaction is flagged
+  // Identify why an individual transaction is flagged
   const getTransactionFlags = (tx: Transaction): string[] => {
-    // If the overall company MAD is in the green/acceptable zone, all transactions are conforming
-    if (!isCompanyMadAtRisk) {
-      return [];
-    }
-
     const flags: string[] = [];
-    const firstDigit = getLeadingDigit(tx.Amount);
-    
-    // Condition 1: Digit frequency exceeds expected Benford frequency (diffFreq > 0)
-    const stat = firstDigit !== null ? effectiveBenford.digitStats.find((s) => s.digit === firstDigit) : null;
-    const exceedsExpected = stat ? stat.diffFreq > 0 : false;
 
-    // Condition 2: Overall company MAD is in risk zone (isCompanyMadAtRisk === true)
-    if (firstDigit !== null && exceedsExpected) {
-      flags.push(`Non-conforming Leading Digit ${firstDigit}`);
-    }
-
+    // Individual transaction anomaly check: excessive round amount voucher ($500 / $1,000 multiples)
     if (isExcessiveRoundAmount(tx.Amount)) {
       flags.push('Round Voucher Anomaly');
     }
@@ -839,9 +825,9 @@ export const DataLedgerWorkbench: React.FC<DataLedgerWorkbenchProps> = ({
                           <td className="py-2.5 px-4 text-center tabular-nums">
                             <span
                               className={`inline-block font-bold px-1.5 py-0.5 rounded text-[11px] ${
-                                isCompanyMadAtRisk && firstDigit !== null && (effectiveBenford.digitStats.find((s) => s.digit === firstDigit)?.diffFreq ?? 0) > 0
+                                activeDrillDownFilter?.active && firstDigit !== null && activeDrillDownFilter.targetDigits.includes(firstDigit)
                                   ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
-                                  : 'text-emerald-700 dark:text-emerald-400'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                               }`}
                             >
                               {firstDigit ?? '-'}
